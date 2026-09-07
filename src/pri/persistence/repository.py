@@ -392,7 +392,11 @@ class PriRepository:
                              CAST(:violations AS jsonb),
                              CAST(:score AS jsonb),
                              :pareto_optimal)
-                        ON CONFLICT (id) DO NOTHING
+                        -- (session_id, id), not id. Plan ids are
+                        -- deterministic — every recovery makes a plan-A — so
+                        -- conflicting on id alone made the second session
+                        -- anywhere in the database silently store nothing.
+                        ON CONFLICT (session_id, id) DO NOTHING
                         """
                     ),
                     {

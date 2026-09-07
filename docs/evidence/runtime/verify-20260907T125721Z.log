@@ -1,0 +1,31 @@
+PRI verify — 2026-09-07 12:57:21 UTC
+target: https://pri-api-3r5eyp275a-uc.a.run.app
+
+
+[1m1 · Health[0m
+  {"status":"ok","version":"0.1.0","git_sha":"ab9d0e9","checks":{"database":"ok","kafka":"ok","gemini":"configured"},"database":"up","agent_enabled":true,"kafka":{"status":"ok","topics":["production.events","production.recovery.requested","production.recovery.completed","production.audit"],"reachable":true,"delivered":3,"failed":0,"degraded":false,"reopens_in_seconds":0.0,"last_error":null,"last_delivery":{"topic":"production.events","partition":0,"offset":22}},"at":"2026-09-07T12:57:23.589685Z"}
+  [32mPASS[0m  /health returns 200
+  [32mPASS[0m  database ok
+  [32mPASS[0m  kafka ok
+
+[1m2 · The overview returns a production[0m
+  [32mPASS[0m  schedule for film-001 has days
+
+[1m3 · A disruption produces candidates, including an invalid one[0m
+  [32mPASS[0m  event accepted
+  [32mPASS[0m  recovery returned candidates
+  [32mPASS[0m  at least one candidate was rejected by the validator
+  [32mPASS[0m  a constraint code appears in the response
+
+[1m4 · Kafka actually delivered something[0m
+  [32mPASS[0m  broker acknowledged a message ("partition":0, "offset":23)
+
+[1m5 · Demo reset[0m
+  [32mPASS[0m  demo reset succeeded
+  [32mPASS[0m  reset left the production at version 1
+
+[1m6 · A call sheet downloads as a real PDF[0m
+  [32mPASS[0m  call sheet for 2026-09-08 is a PDF (3375 bytes)
+
+[1m12 passed, 0 failed[0m
+evidence: /c/Users/prajw/OneDrive/Desktop/AGENTIC CINEMA MAIN/docs/evidence/runtime/verify-20260907T125721Z.log

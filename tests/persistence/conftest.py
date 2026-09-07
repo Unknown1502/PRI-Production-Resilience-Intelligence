@@ -7,7 +7,7 @@ docker-compose.dev.yml up -d`` and then ``pytest tests/persistence/``).
 
 The conftest:
 1. Creates a fresh async engine per test function (avoids cross-loop issues).
-2. Applies 001_init.sql to a clean schema at the start of every test.
+2. Applies every migration to a clean schema at the start of every test.
 3. Tears the schema down after each test so tests are fully isolated.
 """
 
@@ -32,14 +32,14 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 _DEFAULT_URL = "postgresql+asyncpg://pri_user:changeme@localhost:5432/pri"
-_MIGRATION_SQL = (
-    Path(__file__).parent.parent.parent
-    / "src"
-    / "pri"
-    / "persistence"
-    / "migrations"
-    / "001_init.sql"
-)
+#: Every migration, in filename order — the same schema the deploy builds.
+#: Applying only 001 meant a test could pass against a schema that no
+#: deployment has had since, which is how a primary-key change went unnoticed.
+_MIGRATIONS_DIR = Path(__file__).parents[2] / "src" / "pri" / "persistence" / "migrations"
+
+
+def _migration_sql() -> str:
+    return "\n".join(path.read_text() for path in sorted(_MIGRATIONS_DIR.glob("*.sql")))
 
 
 def _db_url() -> str:
@@ -54,7 +54,7 @@ def _db_url() -> str:
 @pytest_asyncio.fixture(scope="function")
 async def db_session_factory() -> AsyncGenerator[SessionFactory, None]:
     """Create engine, apply clean schema, yield SessionFactory, then tear down."""
-    migration_sql = _MIGRATION_SQL.read_text()
+    migration_sql = _migration_sql()
 
     # Fresh engine per test — avoids sharing asyncpg connections across event loops.
     engine = create_async_engine(_db_url(), echo=False, pool_pre_ping=False)

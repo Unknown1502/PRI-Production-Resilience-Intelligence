@@ -41,9 +41,8 @@ if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
 
 _DEFAULT_URL = "postgresql+asyncpg://pri_user:changeme@localhost:5432/pri"
-_MIGRATION_SQL = (
-    Path(__file__).parents[2] / "src" / "pri" / "persistence" / "migrations" / "001_init.sql"
-)
+#: Every migration, in filename order — the same schema the deploy builds.
+_MIGRATIONS_DIR = Path(__file__).parents[2] / "src" / "pri" / "persistence" / "migrations"
 _TABLES = """
     artifacts, audit_log, approvals, candidate_plans,
     recovery_sessions, state_versions, events, productions
@@ -64,8 +63,9 @@ async def repo(tmp_path: Path) -> AsyncGenerator[PriRepository, None]:
     )
     async with engine.begin() as conn:
         await conn.execute(text(f"DROP TABLE IF EXISTS {_TABLES} CASCADE"))
-        for statement in split_sql_statements(_MIGRATION_SQL.read_text()):
-            await conn.execute(text(statement))
+        for path in sorted(_MIGRATIONS_DIR.glob("*.sql")):
+            for statement in split_sql_statements(path.read_text()):
+                await conn.execute(text(statement))
 
     factory = SessionFactory(engine)
     repository = PriRepository(factory)

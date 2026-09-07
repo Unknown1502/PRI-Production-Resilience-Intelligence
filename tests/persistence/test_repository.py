@@ -370,6 +370,68 @@ class TestRecoverySession:
         # Should not raise.
         await repo.add_candidates(sid, [ep])
 
+    async def test_two_sessions_keep_their_own_plans(
+        self, db_session_factory: SessionFactory
+    ) -> None:
+        """Plan ids repeat, so the key must include the session.
+
+        Every recovery produces a plan-A. When `id` alone was the primary key,
+        the second session anywhere in the database collided with the first and
+        `ON CONFLICT DO NOTHING` swallowed it — the audit log recorded four
+        candidates while the table kept none of them. Found on the deployed
+        instance, where the recovery screen rehydrated to one plan and an empty
+        frontier for a session whose API response had all four.
+        """
+        repo = _make_repo(db_session_factory)
+        await repo.commit_state(_root_state())
+
+        def evaluated(plan_id: str, label: str) -> EvaluatedPlan:
+            return EvaluatedPlan(
+                plan=CandidatePlan(
+                    id=plan_id, label=label, base_version=1, moves=(), rationale_hint=None
+                ),
+                valid=True,
+                violations=(),
+                score=None,
+                resulting_state_digest=None,
+            )
+
+        first = await repo.create_session("prod-1", None, 1)
+        second = await repo.create_session("prod-1", None, 1)
+
+        plans = [evaluated("plan-A", "A"), evaluated("plan-B", "B")]
+        await repo.add_candidates(first, plans)
+        await repo.add_candidates(second, plans)
+
+        assert len(await repo.get_candidates(first)) == 2
+        assert len(await repo.get_candidates(second)) == 2, (
+            "the second session lost its candidates to the first session's ids"
+        )
+
+    async def test_an_approval_binds_to_the_plan_in_its_own_session(
+        self, db_session_factory: SessionFactory
+    ) -> None:
+        """The composite key has to carry through to approvals as well."""
+        repo = _make_repo(db_session_factory)
+        await repo.commit_state(_root_state())
+
+        plan = EvaluatedPlan(
+            plan=CandidatePlan(
+                id="plan-A", label="A", base_version=1, moves=(), rationale_hint=None
+            ),
+            valid=True,
+            violations=(),
+            score=None,
+            resulting_state_digest=None,
+        )
+        first = await repo.create_session("prod-1", None, 1)
+        second = await repo.create_session("prod-1", None, 1)
+        await repo.add_candidates(first, [plan])
+        await repo.add_candidates(second, [plan])
+
+        approval = await repo.record_approval(second, "plan-A", "director", "APPROVED")
+        assert len(approval) == 36
+
     async def test_record_approval(self, db_session_factory: SessionFactory) -> None:
         repo = _make_repo(db_session_factory)
         await repo.commit_state(_root_state())

@@ -1,7 +1,12 @@
 import type { Config } from "tailwindcss";
 
 /**
- * The palette comes from the object PRI replaces: a production strip board.
+ * The palette comes from the objects PRI replaces, and there are two of them:
+ * the strip board on the office wall (dark) and the call sheet on the desk
+ * (light). The values live in `globals.css` as CSS variables; this file only
+ * names them, so a component never knows which theme is on.
+ *
+ * The board:
  *
  * Before any of this was software, a 1st AD scheduled a film on a wooden board
  * holding one cardboard strip per scene. The strips are colour-coded, and the
@@ -23,46 +28,42 @@ const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Every colour is a CSS variable so both themes share one set of names.
+      // `<alpha-value>` keeps Tailwind's opacity modifiers (`bg-stamp/20`)
+      // working through the indirection.
       colors: {
-        // The board itself: warm and wooden, not a blue-black screen.
         board: {
-          900: "#12100c",
-          800: "#191612",
-          700: "#221d17",
-          600: "#2e2820",
-          500: "#413931",
+          900: "rgb(var(--board-900) / <alpha-value>)",
+          800: "rgb(var(--board-800) / <alpha-value>)",
+          700: "rgb(var(--board-700) / <alpha-value>)",
+          600: "rgb(var(--board-600) / <alpha-value>)",
+          500: "rgb(var(--board-500) / <alpha-value>)",
         },
-        // Text on the board.
         chalk: {
-          100: "#f0ebe0",
-          200: "#d9d2c4",
-          400: "#9c9384",
-          600: "#6b6357",
+          100: "rgb(var(--chalk-100) / <alpha-value>)",
+          200: "rgb(var(--chalk-200) / <alpha-value>)",
+          400: "rgb(var(--chalk-400) / <alpha-value>)",
+          600: "rgb(var(--chalk-600) / <alpha-value>)",
         },
-        // The four strip colours, held back so a board of them is readable
-        // rather than a fairground.
         strip: {
-          "int-day": "#e9e3d4",
-          "ext-day": "#e0c163",
-          "int-night": "#7fa3c9",
-          "ext-night": "#8bab72",
-          held: "#3a332b",
+          "int-day": "rgb(var(--strip-int-day) / <alpha-value>)",
+          "ext-day": "rgb(var(--strip-ext-day) / <alpha-value>)",
+          "int-night": "rgb(var(--strip-int-night) / <alpha-value>)",
+          "ext-night": "rgb(var(--strip-ext-night) / <alpha-value>)",
+          held: "rgb(var(--strip-held) / <alpha-value>)",
         },
-        // Ink printed on a strip.
-        ink: "#191510",
-        // Refused. One use, one meaning.
+        ink: "rgb(var(--ink) / <alpha-value>)",
         stamp: {
-          DEFAULT: "#c0453b",
-          dim: "#5e241f",
-          wash: "rgba(192, 69, 59, 0.12)",
+          DEFAULT: "rgb(var(--stamp) / <alpha-value>)",
+          dim: "rgb(var(--stamp-dim) / <alpha-value>)",
+          wash: "rgb(var(--stamp) / 0.12)",
         },
-        // Approved, verified, live.
         seal: {
-          DEFAULT: "#5f9e6a",
-          dim: "#2c4a31",
-          wash: "rgba(95, 158, 106, 0.12)",
+          DEFAULT: "rgb(var(--seal) / <alpha-value>)",
+          dim: "rgb(var(--seal-dim) / <alpha-value>)",
+          wash: "rgb(var(--seal) / 0.12)",
         },
-        caution: "#d19a3f",
+        caution: "rgb(var(--caution) / <alpha-value>)",
       },
       fontFamily: {
         // Archivo: a grotesque with a real condensed cut, which is what a

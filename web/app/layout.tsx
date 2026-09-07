@@ -37,6 +37,30 @@ const courierPrime = Courier_Prime({
   display: "swap",
 });
 
+/**
+ * Set the theme before the first paint.
+ *
+ * React cannot do this: the server has no idea what the viewer chose, so any
+ * server-rendered guess is wrong half the time and corrects itself after
+ * hydration — which the viewer sees as the page flashing the other theme. This
+ * runs synchronously in <head>, before the body is painted.
+ *
+ * It must agree with `ThemeToggle`: same storage key, same resolution rule.
+ */
+const NO_FLASH = `
+(function () {
+  try {
+    var stored = localStorage.getItem('pri-theme');
+    var dark = stored === 'board' ||
+      (stored !== 'callsheet' &&
+       window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+`;
+
 export const metadata: Metadata = {
   title: "PRI — Production Resilience Intelligence",
   description:
@@ -48,7 +72,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html
       lang="en"
       className={`${archivo.variable} ${archivoNarrow.variable} ${courierPrime.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
+      </head>
       <body>
         {/* The shell reads `?production=`, and a client component that reads
             search params has to sit under a Suspense boundary or every page

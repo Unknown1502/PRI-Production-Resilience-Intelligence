@@ -2,9 +2,91 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Two themes, both taken from the same room.
+ *
+ *   dark   the strip board on the production-office wall — wooden frame,
+ *          coloured card, read across the room
+ *   light  the call sheet on the desk — paper and printed ink
+ *
+ * The strip colours do not change between them, and that is the point: they
+ * are a printing standard, the same four colours on card as on paper. Only the
+ * surround moves, so the data never restyles itself.
+ *
+ * The numeric scale is depth, not lightness. `board-900` is always the surface
+ * furthest from the reader and `chalk-100` always the strongest text, in both
+ * themes. Components therefore never mention a theme.
+ *
+ * Values are space-separated RGB channels so Tailwind's opacity modifiers
+ * (`bg-stamp/20`) keep working.
+ */
+
 @layer base {
-  html {
+  :root {
+    --board-900: 18 16 12;
+    --board-800: 25 22 18;
+    --board-700: 34 29 23;
+    --board-600: 46 40 32;
+    --board-500: 65 57 49;
+
+    --chalk-100: 240 235 224;
+    --chalk-200: 217 210 196;
+    --chalk-400: 156 147 132;
+    /* Measured, not chosen by eye: the previous value sat at 3.2:1 against the
+       board, which is under WCAG AA for the small labels it is used on. */
+    --chalk-600: 134 126 114;
+
+    /* The four strip colours, and the ink printed on them. Identical in both
+       themes — a yellow strip is a yellow strip. */
+    --strip-int-day: 233 227 212;
+    --strip-ext-day: 224 193 99;
+    --strip-int-night: 127 163 201;
+    --strip-ext-night: 139 171 114;
+    --strip-held: 58 51 43;
+    --ink: 25 21 16;
+
+    --stamp: 209 86 76;
+    --stamp-dim: 110 44 38;
+    --seal: 95 158 106;
+    --seal-dim: 44 74 49;
+    --caution: 209 154 63;
+
     color-scheme: dark;
+  }
+
+  :root[data-theme="light"] {
+    /* Paper, and the desk it sits on. Deliberately a shade cooler than
+       stationery cream, because this is production paperwork run off a copier,
+       not a letterpress invitation. */
+    --board-900: 246 245 241;
+    --board-800: 255 255 255;
+    --board-700: 249 248 244;
+    --board-600: 217 213 203;
+    --board-500: 189 184 172;
+
+    /* Depth still means depth: 100 is the strongest ink, 600 the faintest. */
+    --chalk-100: 24 21 17;
+    --chalk-200: 58 52 44;
+    --chalk-400: 106 99 88;
+    --chalk-600: 117 109 97;
+
+    --strip-int-day: 233 227 212;
+    --strip-ext-day: 224 193 99;
+    --strip-int-night: 127 163 201;
+    --strip-ext-night: 139 171 114;
+    --strip-held: 226 222 212;
+    --ink: 25 21 16;
+
+    /* Darkened so they still carry against paper. The dark theme's values
+       fail contrast on white; a signal colour that cannot be read is not a
+       signal. */
+    --stamp: 168 48 39;
+    --stamp-dim: 214 158 152;
+    --seal: 47 106 60;
+    --seal-dim: 160 197 166;
+    --caution: 148 100 20;
+
+    color-scheme: light;
   }
 
   body {
@@ -13,21 +95,21 @@
 
   /* Every figure on screen is a real number from the engine, and columns of
      numbers only read as columns when the digits line up. Tabular figures,
-     not a monospaced face: Archivo has them, so a time can sit in a column
+     not a monospaced face: Archivo has them, so a time sits in a column
      without changing typeface halfway through a sentence. */
   .tnum {
     font-variant-numeric: tabular-nums;
   }
 
   ::selection {
-    @apply bg-strip-int-day/30 text-chalk-100;
+    @apply bg-caution/30 text-chalk-100;
   }
 
-  /* Keyboard focus has to be visible on both the dark board and the light
-     strips, so it is drawn as a ring with an offset rather than a colour
-     change that one of the two would swallow. */
+  /* Focus has to be visible on the board, on paper, and on a light strip, so
+     it is a ring with an offset rather than a colour one of the three would
+     swallow. */
   :focus-visible {
-    @apply outline-none ring-2 ring-chalk-200 ring-offset-2 ring-offset-board-900;
+    @apply outline-none ring-2 ring-chalk-400 ring-offset-2 ring-offset-board-900;
   }
 
   ::-webkit-scrollbar {
@@ -68,8 +150,8 @@
   }
 
   /* Sentence case, normal tracking, real size. The tracked-out caps eyebrow
-     that used to live here is the single commonest tell of a generated
-     interface, and it made every panel shout its own filing category. */
+     that used to live here is the commonest tell of a generated interface, and
+     it made every panel shout its own filing category. */
   .panel-title {
     @apply text-sm font-medium text-chalk-100;
   }
@@ -92,11 +174,11 @@
   }
 
   .btn-go {
-    @apply btn border-seal-dim bg-seal-wash text-seal hover:border-seal hover:bg-seal/20;
+    @apply btn border-seal-dim bg-seal/10 text-seal hover:border-seal hover:bg-seal/20;
   }
 
   .btn-stop {
-    @apply btn border-stamp-dim bg-stamp-wash text-stamp hover:border-stamp hover:bg-stamp/20;
+    @apply btn border-stamp-dim bg-stamp/10 text-stamp hover:border-stamp hover:bg-stamp/20;
   }
 
   .row-hover {
@@ -110,8 +192,8 @@
     @apply rounded-sm border border-board-600 bg-board-700;
   }
 
-  /* One scene. Light card, dark ink, and a colour that is its INT/EXT and
-     time of day rather than a theme accent. */
+  /* One scene. The card is light in both themes, and the ink on it is dark in
+     both, because a strip is a printed object rather than a themed surface. */
   .strip {
     @apply flex items-center gap-3 px-3 py-1.5 text-ink;
     border-left: 3px solid rgb(0 0 0 / 0.25);
@@ -127,18 +209,17 @@
   }
 }
 
-/* @xyflow/react ships a light theme; these override the parts that would glow
-   white on a dark board. */
+/* @xyflow/react ships its own theme; these follow whichever surround is on. */
 .react-flow__attribution {
   display: none;
 }
 
 .react-flow__controls-button {
-  background: #221d17;
-  border-bottom: 1px solid #2e2820;
-  fill: #9c9384;
+  background: rgb(var(--board-700));
+  border-bottom: 1px solid rgb(var(--board-600));
+  fill: rgb(var(--chalk-400));
 }
 
 .react-flow__controls-button:hover {
-  background: #2e2820;
+  background: rgb(var(--board-600));
 }

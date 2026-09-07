@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ConnectionState } from "@/lib/stream";
 
+import { ThemeToggle } from "./ThemeToggle";
 import { StatusPill } from "./primitives";
 
 const CONNECTION_TONE: Record<ConnectionState, "clear" | "caution" | "alert" | "neutral"> = {
@@ -87,6 +88,8 @@ export function TopBar({
           />
           {connection}
         </StatusPill>
+
+        <ThemeToggle />
 
         {onReset ? (
           <button type="button" className="btn-quiet" onClick={reset} disabled={busy}>

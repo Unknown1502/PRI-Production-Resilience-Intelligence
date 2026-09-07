@@ -95,7 +95,16 @@ create_or_skip() {
     return 0
   fi
   case "${output}" in
+    # Every service words "it is already there" differently, and each wording
+    # this does not know about turns a re-run into an aborted deploy. Cloud
+    # Storage says "you already own it" and returns 409 — which is why the
+    # first re-run after the bucket step was added stopped dead before
+    # deploying anything, while the invocation reported success.
     *"already exists"*|*"altready exists"*|*"ALREADY_EXISTS"*)
+      already
+      return 0
+      ;;
+    *"you already own it"*|*"HTTPError 409"*)
       already
       return 0
       ;;

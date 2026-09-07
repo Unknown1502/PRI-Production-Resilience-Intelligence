@@ -1,0 +1,24 @@
+PRI deploy — 2026-09-07 15:56:05 UTC
+log: /c/Users/prajw/OneDrive/Desktop/AGENTIC CINEMA MAIN/docs/evidence/google-cloud/deploy-20260907T155605Z.log
+
+[1m==> Enabling APIs[0m
+Operation "operations/acat.p2-482667750837-4ff170dc-68c4-46a5-bd3b-1f84a9a17bca" finished successfully.
+
+[1m==> Artifact Registry repository pri[0m
+    (already exists, skipping)
+WARNING: Your config file at [C:\Users\prajw\.docker\config.json] contains these credential helper entries:
+
+{
+  "credHelpers": {
+    "us-central1-docker.pkg.dev": "gcloud"
+  }
+}
+Adding credentials for: us-central1-docker.pkg.dev
+gcloud credential helpers already registered correctly.
+
+[1m==> Cloud Storage bucket pri-production-resilience-call-sheets[0m
+
+    FAILED: gcloud storage buckets create gs://pri-production-resilience-call-sheets --project pri-production-resilience --location=us-central1 --uniform-bucket-level-access --public-access-prevention
+
+Creating gs://pri-production-resilience-call-sheets/...
+ERROR: (gcloud.storage.buckets.create) HTTPError 409: Your previous request to create the named bucket succeeded and you already own it.

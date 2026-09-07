@@ -625,7 +625,11 @@ class TestUnixSocketEngine:
         )
         engine = build_engine(settings.database_dsn)
         assert engine.url.database == "pri"
-        assert dict(engine.url.query)["host"] == "/cloudsql/p:r:i"
+        # The socket path is deliberately no longer in the URL — it is moved
+        # into connect_args, because the asyncpg dialect would otherwise
+        # forward it as a server setting and connect over TCP instead. See
+        # TestCloudSqlUnixSocket in test_cloud_run_contract.py.
+        assert "host" not in engine.url.query
 
 
 # ---------------------------------------------------------------------------

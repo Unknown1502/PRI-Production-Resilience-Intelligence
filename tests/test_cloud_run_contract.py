@@ -11,6 +11,7 @@ script cannot quietly put them back.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
 import re
@@ -157,6 +158,57 @@ class TestPasswordInjection:
         assert "DATABASE_PASSWORD=pri-db-password:latest" in script, (
             "the password must still be mounted from Secret Manager"
         )
+
+
+class TestCloudSqlUnixSocket:
+    """Blocker 6 — the DSN parsed, and then connected over TCP anyway.
+
+    Everything above got the Cloud SQL DSN accepted and the password folded in.
+    None of it made the connection work: the asyncpg dialect does not read
+    `?host=/path` from the query string the way psycopg does. It forwards
+    unknown query parameters as server settings and leaves the host unset, so
+    asyncpg opened an SSL TCP connection to the default host and failed with
+    `socket.gaierror: Temporary failure in name resolution` — an error that
+    reads like DNS and mentions no socket anywhere.
+
+    Found by the seed job failing on Cloud Run, twenty minutes into a deploy.
+    """
+
+    async def test_the_socket_path_reaches_asyncpg(self) -> None:
+        """The assertion that matters: what asyncpg is actually handed."""
+        from unittest.mock import patch
+
+        from pri.persistence.database import build_engine
+
+        captured: dict[str, Any] = {}
+
+        async def fake_connect(*_args: Any, **kwargs: Any) -> None:
+            captured.update(kwargs)
+            raise RuntimeError("intercepted")
+
+        engine = build_engine(_CLOUD_SQL_DSN.replace("pri_user@", "pri_user:pw@"))
+        with patch("asyncpg.connect", new=fake_connect), contextlib.suppress(Exception):
+            async with engine.connect():
+                pass
+
+        assert captured.get("host") == "/cloudsql/proj:us-central1:pri-db", (
+            f"asyncpg was not given the socket directory: {captured}"
+        )
+
+    def test_the_socket_path_is_removed_from_the_url(self) -> None:
+        """Left in the query string it becomes a server setting and breaks."""
+        from pri.persistence.database import build_engine
+
+        engine = build_engine(_CLOUD_SQL_DSN)
+        assert "host" not in engine.url.query
+
+    def test_an_ordinary_tcp_dsn_is_untouched(self) -> None:
+        from pri.persistence.database import build_engine
+
+        url = "postgresql+asyncpg://pri_user:changeme@localhost:5432/pri"
+        engine = build_engine(url)
+        assert engine.url.host == "localhost"
+        assert engine.url.port == 5432
 
 
 class TestConsumerReadiness:

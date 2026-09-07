@@ -18,8 +18,9 @@ Example::
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -35,7 +36,9 @@ def build_engine(url: str, *, echo: bool = False) -> AsyncEngine:
     """Create an ``AsyncEngine`` from a connection URL.
 
     Inputs:
-        url:  A ``postgresql+asyncpg://…`` DSN string.
+        url:  A ``postgresql+asyncpg://…`` DSN string. Cloud SQL's unix-socket
+              form — ``…@/pri?host=/cloudsql/project:region:instance`` — is
+              handled; see below.
         echo: When ``True``, emit all SQL to stdout (for debugging only).
 
     Outputs:
@@ -44,12 +47,34 @@ def build_engine(url: str, *, echo: bool = False) -> AsyncEngine:
     Failure modes:
         Raises ``sqlalchemy.exc.ArgumentError`` if ``url`` is malformed.
     """
+    parsed = make_url(url)
+    connect_args: dict[str, Any] = {}
+
+    socket_path = parsed.query.get("host")
+    if isinstance(socket_path, str) and socket_path.startswith("/"):
+        # Cloud SQL over a unix socket, and the one place the DSN cannot be
+        # handed to SQLAlchemy as written.
+        #
+        # psycopg reads `?host=/path` from the query string as the socket
+        # directory. The asyncpg dialect does not: it forwards unknown query
+        # parameters as *server settings* and leaves the connection host unset,
+        # so asyncpg opens an SSL TCP connection to the default host instead.
+        # The failure surfaces deep inside asyncpg as
+        # `socket.gaierror: Temporary failure in name resolution`, which reads
+        # like a DNS problem and says nothing about sockets.
+        #
+        # asyncpg does support it — as `host` in connect_args, where a value
+        # starting with "/" is treated as a socket directory. So it moves.
+        parsed = parsed.difference_update_query(["host"])
+        connect_args["host"] = socket_path
+
     return create_async_engine(
-        url,
+        parsed,
         echo=echo,
         pool_pre_ping=True,
         pool_size=5,
         max_overflow=10,
+        connect_args=connect_args,
     )
 
 

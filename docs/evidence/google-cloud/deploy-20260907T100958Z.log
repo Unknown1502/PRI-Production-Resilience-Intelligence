@@ -1,0 +1,61 @@
+PRI deploy — 2026-09-07 10:09:58 UTC
+log: /c/Users/prajw/OneDrive/Desktop/AGENTIC CINEMA MAIN/docs/evidence/google-cloud/deploy-20260907T100958Z.log
+
+[1m==> Enabling APIs[0m
+Operation "operations/acat.p2-482667750837-1d921ec8-c88c-4d56-803e-5628c341f135" finished successfully.
+
+[1m==> Artifact Registry repository pri[0m
+    (already exists, skipping)
+WARNING: Your config file at [C:\Users\prajw\.docker\config.json] contains these credential helper entries:
+
+{
+  "credHelpers": {
+    "us-central1-docker.pkg.dev": "gcloud"
+  }
+}
+Adding credentials for: us-central1-docker.pkg.dev
+gcloud credential helpers already registered correctly.
+
+[1m==> Cloud SQL instance pri-db (ENTERPRISE, db-f1-micro)[0m
+    Creating Cloud SQL instance for POSTGRES_16...
+    ................................done.
+    Created [https://sqladmin.googleapis.com/sql/v1beta4/projects/pri-production-resilience/instances/pri-db].
+    NAME    DATABASE_VERSION  LOCATION       TIER         PRIMARY_ADDRESS  PRIVATE_ADDRESS  STATUS
+    pri-db  POSTGRES_16       us-central1-a  db-f1-micro  136.116.140.167  -                RUNNABLE
+    Creating Cloud SQL database...
+    .done.
+    Created database [pri].
+    instance: pri-db
+    name: pri
+    project: pri-production-resilience
+
+[1m==> Database password in Secret Manager[0m
+    pri-db-password already present
+
+[1m==> Database user pri_user[0m
+    Creating Cloud SQL user...
+    .done.
+    Created user [pri_user].
+    pri_user created
+
+[1m==> Runtime service account[0m
+Created service account [pri-runtime].
+Updated IAM policy for project [pri-production-resilience].
+    roles/cloudsql.client
+Updated IAM policy for project [pri-production-resilience].
+    roles/secretmanager.secretAccessor
+Updated IAM policy for project [pri-production-resilience].
+    roles/aiplatform.user
+Updated IAM policy for project [pri-production-resilience].
+    roles/logging.logWriter
+
+[1m==> Confluent credentials in Secret Manager[0m
+Created version [1] of the secret [pri-confluent-api-key].
+    pri-confluent-api-key created
+Created version [1] of the secret [pri-confluent-api-secret].
+    pri-confluent-api-secret created
+Created version [1] of the secret [pri-api-key].
+    pri-api-key created
+
+[1m==> Building api and consumer images (e80ad5b)[0m
+ERROR: (gcloud.builds.submit) Unable to read file [-]: [Errno 2] No such file or directory: '-'

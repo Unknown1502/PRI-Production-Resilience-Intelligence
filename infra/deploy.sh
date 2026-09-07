@@ -120,7 +120,12 @@ build_image() {
     extras="${extras}
       - ${extra}"
   done
-  gcloud builds submit --project "${PROJECT_ID}" --config - . <<YAML
+  # A real file, not `--config -`. This gcloud rejects stdin with
+  # "Unable to read file [-]", and the failure arrives after the images have
+  # been uploaded as a build context, so it is slow as well as unhelpful.
+  local config
+  config="$(mktemp -t pri-build-XXXXXX.yaml)"
+  cat >"${config}" <<YAML
 steps:
   - name: gcr.io/cloud-builders/docker
     args:
@@ -133,6 +138,10 @@ steps:
 images:
   - ${image}
 YAML
+  gcloud builds submit --project "${PROJECT_ID}" --config "${config}" .
+  local status=$?
+  rm -f "${config}"
+  return "${status}"
 }
 
 # ---------------------------------------------------------------------------

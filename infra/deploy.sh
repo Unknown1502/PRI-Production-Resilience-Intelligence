@@ -41,6 +41,7 @@ REGION="${GOOGLE_CLOUD_LOCATION:-${GOOGLE_CLOUD_REGION:-us-central1}}"
 REPO="${ARTIFACT_REPO:-pri}"
 SQL_INSTANCE="${SQL_INSTANCE:-pri-db}"
 SQL_TIER="${SQL_TIER:-db-f1-micro}"
+SQL_EDITION="${SQL_EDITION:-ENTERPRISE}"
 DB_NAME="${DB_NAME:-pri}"
 DB_USER="${DB_USER:-pri_user}"
 DEMO_PRODUCTION_ID="${PRI_DEMO_PRODUCTION_ID:-film-001}"
@@ -70,6 +71,34 @@ IMAGE_BASE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}"
 
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 already() { printf '    (already exists, skipping)\n'; }
+
+# Run a create command that is expected to fail when the resource is already
+# there — and *only* when it is already there.
+#
+# The previous form was `gcloud ... 2>/dev/null || already`, which printed
+# "already exists, skipping" for every possible failure: a bad flag, a quota
+# refusal, a permission error. It reported success while creating nothing, and
+# the deploy then failed several steps later with a 404 that pointed at the
+# wrong thing. A deploy script that lies about what it did is worse than one
+# that stops.
+create_or_skip() {
+  local output status
+  output="$("$@" 2>&1)"
+  status=$?
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' "${output}" | sed 's/^/    /'
+    return 0
+  fi
+  case "${output}" in
+    *"already exists"*|*"altready exists"*|*"ALREADY_EXISTS"*)
+      already
+      return 0
+      ;;
+  esac
+  printf '\n    FAILED: %s\n\n' "$*" >&2
+  printf '%s\n' "${output}" >&2
+  exit "${status}"
+}
 
 
 # Build one image from a named Dockerfile.
@@ -122,11 +151,11 @@ gcloud services enable \
 # ---------------------------------------------------------------------------
 
 say "Artifact Registry repository ${REPO}"
-gcloud artifacts repositories create "${REPO}" \
+create_or_skip gcloud artifacts repositories create "${REPO}" \
   --repository-format=docker \
   --location="${REGION}" \
   --description="PRI container images" \
-  --project "${PROJECT_ID}" 2>/dev/null || already
+  --project "${PROJECT_ID}"
 
 gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
@@ -134,32 +163,59 @@ gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 # 3 · Cloud SQL
 # ---------------------------------------------------------------------------
 
-say "Cloud SQL instance ${SQL_INSTANCE} (${SQL_TIER})"
-gcloud sql instances create "${SQL_INSTANCE}" \
+# --edition is explicit. Postgres 16 now defaults to ENTERPRISE_PLUS, which
+# rejects every shared-core tier: `db-f1-micro` fails with "Invalid Tier for
+# (ENTERPRISE_PLUS) Edition". ENTERPRISE is the edition that has the cheap
+# tiers, and cheap is the correct choice for a demo database.
+say "Cloud SQL instance ${SQL_INSTANCE} (${SQL_EDITION}, ${SQL_TIER})"
+create_or_skip gcloud sql instances create "${SQL_INSTANCE}" \
   --database-version=POSTGRES_16 \
+  --edition="${SQL_EDITION}" \
   --tier="${SQL_TIER}" \
   --region="${REGION}" \
   --storage-size=10GB \
   --storage-auto-increase \
-  --project "${PROJECT_ID}" 2>/dev/null || already
+  --project "${PROJECT_ID}"
 
-gcloud sql databases create "${DB_NAME}" \
+create_or_skip gcloud sql databases create "${DB_NAME}" \
   --instance="${SQL_INSTANCE}" \
-  --project "${PROJECT_ID}" 2>/dev/null || already
+  --project "${PROJECT_ID}"
 
-# Generated here and never printed. If you need it again, read it out of
-# Secret Manager rather than re-running this script.
-if ! gcloud secrets describe pri-db-password --project "${PROJECT_ID}" >/dev/null 2>&1; then
-  say "Generating the database password into Secret Manager"
+# The password is generated here and never printed — captured by command
+# substitution rather than echoed, so it does not reach the deploy log.
+#
+# The secret and the database user are ensured *separately*. They used to share
+# one branch: create the secret, then create the user. A run that created the
+# secret and then failed before the instance existed therefore left the user
+# permanently uncreated — every later run saw the secret, took the else branch,
+# and skipped the user, so the API deployed against a role that did not exist.
+# Two independent facts, checked independently.
+say "Database password in Secret Manager"
+if gcloud secrets describe pri-db-password --project "${PROJECT_ID}" >/dev/null 2>&1; then
+  printf '    pri-db-password already present\n'
+else
   DB_PASSWORD="$(openssl rand -base64 32 | tr -d '\n/+=' | head -c 32)"
   printf '%s' "${DB_PASSWORD}" |
-    gcloud secrets create pri-db-password --data-file=- --project "${PROJECT_ID}"
-  gcloud sql users create "${DB_USER}" \
+    gcloud secrets create pri-db-password --data-file=- --project "${PROJECT_ID}" >/dev/null
+  printf '    pri-db-password created\n'
+  unset DB_PASSWORD
+fi
+
+say "Database user ${DB_USER}"
+if gcloud sql users list --instance="${SQL_INSTANCE}" --project "${PROJECT_ID}" \
+     --format='value(name)' 2>/dev/null | grep -qx "${DB_USER}"; then
+  printf '    %s already exists\n' "${DB_USER}"
+else
+  # Read the password back rather than regenerating one: the secret is what
+  # Cloud Run mounts, so the user must be created with that exact value.
+  DB_PASSWORD="$(gcloud secrets versions access latest \
+    --secret=pri-db-password --project "${PROJECT_ID}")"
+  create_or_skip gcloud sql users create "${DB_USER}" \
     --instance="${SQL_INSTANCE}" \
     --password="${DB_PASSWORD}" \
-    --project "${PROJECT_ID}" 2>/dev/null || already
-else
-  printf '    pri-db-password already in Secret Manager\n'
+    --project "${PROJECT_ID}"
+  unset DB_PASSWORD
+  printf '    %s created\n' "${DB_USER}"
 fi
 
 CONNECTION_NAME="$(gcloud sql instances describe "${SQL_INSTANCE}" \

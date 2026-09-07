@@ -82,9 +82,12 @@ already() { printf '    (already exists, skipping)\n'; }
 # wrong thing. A deploy script that lies about what it did is worse than one
 # that stops.
 create_or_skip() {
-  local output status
-  output="$("$@" 2>&1)"
-  status=$?
+  local output status=0
+  # `|| status=$?` rather than a bare assignment: under `set -e` a standalone
+  # assignment whose command substitution fails kills the script immediately,
+  # so the handler below never ran and the failure was reported as a silent
+  # exit with no message at all — worse than the masking it replaced.
+  output="$("$@" 2>&1)" || status=$?
   if [ "${status}" -eq 0 ]; then
     printf '%s\n' "${output}" | sed 's/^/    /'
     return 0

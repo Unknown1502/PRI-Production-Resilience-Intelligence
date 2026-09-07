@@ -1,0 +1,7 @@
+PRI deploy — 2026-09-07 09:58:56 UTC
+log: /c/Users/prajw/OneDrive/Desktop/AGENTIC CINEMA MAIN/docs/evidence/google-cloud/deploy-20260907T095856Z.log
+
+[1m==> Enabling APIs[0m
+Operation "operations/acat.p2-482667750837-42704c23-9ce8-49d9-a6c8-3224a1e56539" finished successfully.
+
+[1m==> Artifact Registry repository pri[0m

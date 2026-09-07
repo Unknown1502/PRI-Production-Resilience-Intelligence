@@ -23,6 +23,7 @@ from sqlalchemy import text
 from pri import __version__ as pri_version
 from pri.api.errors import install_error_handlers
 from pri.api.import_routes import router as import_router
+from pri.api.injection import router as injection_router
 from pri.api.kafka_bridge import KafkaBridge
 from pri.api.routes import router
 from pri.config import Settings, get_settings, warn_on_stale_credentials
@@ -185,6 +186,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     install_error_handlers(application)
     application.include_router(router)
     application.include_router(import_router)
+    application.include_router(injection_router)
     return application
 
 

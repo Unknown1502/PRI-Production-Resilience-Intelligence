@@ -244,6 +244,25 @@ else
   unset DB_PASSWORD
 fi
 
+# The passcode for typed disruption injection.
+#
+# That endpoint is a write path with a billed model call behind it, on a public
+# URL. It stays shut unless PRI_INJECT_PASSCODE is set — an unset secret means
+# 404, never "open" — so this generates one and keeps it in Secret Manager.
+#
+# Read it out when you need it at the podium:
+#   gcloud secrets versions access latest --secret=pri-inject-passcode
+say "Injection passcode in Secret Manager"
+if gcloud secrets describe pri-inject-passcode --project "${PROJECT_ID}" >/dev/null 2>&1; then
+  printf '    pri-inject-passcode already present\n'
+else
+  INJECT_PASSCODE="$(openssl rand -base64 24 | tr -d '\n/+=' | head -c 20)"
+  printf '%s' "${INJECT_PASSCODE}" |
+    gcloud secrets create pri-inject-passcode --data-file=- --project "${PROJECT_ID}" >/dev/null
+  printf '    pri-inject-passcode created\n'
+  unset INJECT_PASSCODE
+fi
+
 say "Database user ${DB_USER}"
 if gcloud sql users list --instance="${SQL_INSTANCE}" --project "${PROJECT_ID}" \
      --format='value(name)' 2>/dev/null | grep -qx "${DB_USER}"; then
@@ -413,6 +432,7 @@ gcloud run deploy pri-api \
   --set-secrets "DATABASE_PASSWORD=pri-db-password:latest" \
   --set-secrets "CONFLUENT_API_KEY=pri-confluent-api-key:latest" \
   --set-secrets "CONFLUENT_API_SECRET=pri-confluent-api-secret:latest" \
+  --set-secrets "PRI_INJECT_PASSCODE=pri-inject-passcode:latest" \
   --set-secrets "PRI_API_KEY=pri-api-key:latest"
 
 API_URL="$(gcloud run services describe pri-api \

@@ -216,6 +216,14 @@ class Settings(BaseSettings):
     # outlived the document it pointed at.
     pri_artifact_bucket: str = Field(default="", alias="PRI_ARTIFACT_BUCKET")
 
+    # Live disruption injection. Empty passcode disables the endpoint outright,
+    # which is the right default: it is a write path with an LLM call behind it
+    # on a public URL, and an unset secret must never mean "open".
+    pri_inject_passcode: str = Field(default="", alias="PRI_INJECT_PASSCODE")
+    pri_inject_rate_limit_per_minute: int = Field(
+        default=6, alias="PRI_INJECT_RATE_LIMIT_PER_MINUTE"
+    )
+
     # ------------------------------------------------------------------
     # Build metadata
     # ------------------------------------------------------------------

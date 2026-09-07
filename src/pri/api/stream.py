@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import time
 from collections import defaultdict
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -54,32 +53,12 @@ class Stage(StrEnum):
 #: fill this is a client that has stopped reading.
 _QUEUE_MAXSIZE = 256
 
-#: How long one event id stays deduplicated.
-#:
-#: The window it has to cover is ingest-then-recover, which is one user action
-#: and under a second apart. It must NOT cover the gap between demo runs: the
-#: seeded disruption has a fixed id (`evt-loc04-blocked`), so remembering it
-#: forever meant the second demo in a process silently lost its first stage —
-#: and with the API pinned to one instance, that process lives all day. The
-#: first demo narrated correctly and every one after it did not.
-_ANNOUNCE_TTL = 30.0
-
 
 class StreamBroker:
     """Fan-out of pipeline stages to every client watching a production."""
 
     def __init__(self) -> None:
         self._subscribers: dict[str, set[asyncio.Queue[str]]] = defaultdict(set)
-        #: The last EVENT_RECEIVED announced per production, as
-        #: ``(event_id, monotonic seconds)``, so one disruption is not narrated
-        #: twice.
-        #:
-        #: Two callers legitimately announce it: the ingest route, because the
-        #: browser is already watching when the button is pressed, and the
-        #: recovery service, because a disruption arriving over Kafka reaches
-        #: no HTTP route at all. When both happen — the interactive path — the
-        #: timeline showed "Disruption received" twice for one event.
-        self._announced: dict[str, tuple[str, float]] = {}
 
     def subscribe(self, production_id: str) -> asyncio.Queue[str]:
         """Register a new client and return its queue.
@@ -121,15 +100,6 @@ class StreamBroker:
             payload:       Stage-specific data for the UI to render.
         """
         frame = _format(stage, payload or {})
-        if stage is Stage.EVENT_RECEIVED:
-            event_id = str((payload or {}).get("event_id") or "")
-            if event_id:
-                now = time.monotonic()
-                last = self._announced.get(production_id)
-                if last is not None and last[0] == event_id and now - last[1] < _ANNOUNCE_TTL:
-                    return
-                self._announced[production_id] = (event_id, now)
-
         for queue in list(self._subscribers.get(production_id, ())):
             try:
                 queue.put_nowait(frame)

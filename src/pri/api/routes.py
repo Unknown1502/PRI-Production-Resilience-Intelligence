@@ -244,18 +244,23 @@ async def ingest_event(
     # 1 · Postgres, awaited. This is the record of what happened.
     stored = await repo.record_event(event)
     if stored:
-        # 2 · The stream the browser is already watching.
-        get_broker().publish(
-            production_id,
-            Stage.EVENT_RECEIVED,
-            {
-                "event_id": event.event_id,
-                "event_type": event.event_type,
-                "severity": event.severity,
-                "source": event.source,
-            },
-        )
-        # 3 · Confluent, fire and forget. Scheduled, never awaited: the
+        # This route does NOT announce EVENT_RECEIVED on the stream.
+        #
+        # `run_recovery` does, and it is the single announcer on purpose. A
+        # disruption arriving over Kafka reaches no HTTP route at all, so
+        # recovery is the only point both paths pass through; announcing here
+        # as well produced two "Disruption received" rows for one event on the
+        # interactive path.
+        #
+        # Deduplicating in the broker was tried and was worse. Remembering the
+        # last event id per production suppressed the seeded demo id
+        # (`evt-loc04-blocked`) forever, so the second demo run in a process
+        # lost its opening stage; time-boxing that memory only moved the
+        # problem to "how long is a demo", and a run finishing inside the
+        # window still swallowed the next one. One announcer needs no state
+        # and no guess.
+        #
+        # 2 · Confluent, fire and forget. Scheduled, never awaited: the
         # response must not wait on a broker, and a failure here degrades the
         # event fabric without touching this request.
         kafka = getattr(request.app.state, "kafka", None)

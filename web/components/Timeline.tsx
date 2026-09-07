@@ -12,6 +12,7 @@
 
 import type { Stage, StreamFrame } from "@/lib/types";
 
+import { RunDisruption } from "./RunDisruption";
 import { RuleViolationCard } from "./primitives";
 
 const STAGE_LABEL: Record<Stage, string> = {
@@ -45,12 +46,18 @@ const STAGE_TONE: Record<Stage, string> = {
 export function Timeline({ frames }: { frames: StreamFrame[] }) {
   if (frames.length === 0) {
     return (
-      <div className="px-4 py-10 text-center text-xs text-chalk-600">
-        Waiting for a disruption. Publish one with{" "}
-        <code className="rounded bg-board-700 px-1.5 py-0.5 text-chalk-400">
-          scripts/emit_disruption.py
-        </code>
-        , or press Run demo.
+      <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+        <p className="max-w-xs text-xs leading-relaxed text-chalk-600">
+          Nothing has gone wrong yet. Report a location closure and watch PRI
+          work out what it costs to recover from it.
+        </p>
+        <RunDisruption />
+        <p className="text-2xs text-chalk-600">
+          Or publish one onto the Confluent topic with{" "}
+          <code className="rounded bg-board-700 px-1.5 py-0.5 text-chalk-400">
+            scripts/emit_disruption.py
+          </code>
+        </p>
       </div>
     );
   }
@@ -76,7 +83,7 @@ function TimelineRow({ frame }: { frame: StreamFrame }) {
     >
       <div className="flex items-baseline justify-between gap-3">
         <span
-          className={`text-2xs font-semibold uppercase tracking-[0.12em] ${
+          className={`text-2xs font-semibold ${
             isRejection ? "text-stamp" : "text-chalk-400"
           }`}
         >

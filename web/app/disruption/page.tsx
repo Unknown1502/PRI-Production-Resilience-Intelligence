@@ -28,10 +28,30 @@ import { useShell } from "@/components/Shell";
 import { Timeline } from "@/components/Timeline";
 import { EmptyState, MetricCell, Panel } from "@/components/primitives";
 
+/**
+ * Graph node styling, through the theme's own variables.
+ *
+ * These were hardcoded hex from the old palette. React Flow takes inline
+ * styles rather than classes, so the theme migration walked straight past them
+ * and the graph stayed dark — which on the light theme was a panel of black
+ * boxes on white paper, the one screen that looked broken.
+ */
 const STATUS_STYLE: Record<NodeStatus, { border: string; bg: string; text: string }> = {
-  ok: { border: "#252b38", bg: "#12151c", text: "#9aa3b4" },
-  impacted: { border: "#ff6b4a", bg: "#2a1310", text: "#ff6b4a" },
-  downstream: { border: "#f5c451", bg: "#241f10", text: "#f5c451" },
+  ok: {
+    border: "rgb(var(--board-500))",
+    bg: "rgb(var(--board-700))",
+    text: "rgb(var(--chalk-400))",
+  },
+  impacted: {
+    border: "rgb(var(--stamp))",
+    bg: "rgb(var(--stamp) / 0.14)",
+    text: "rgb(var(--stamp))",
+  },
+  downstream: {
+    border: "rgb(var(--caution))",
+    bg: "rgb(var(--caution) / 0.14)",
+    text: "rgb(var(--caution))",
+  },
 };
 
 export default function DisruptionPage() {
@@ -78,7 +98,15 @@ export default function DisruptionPage() {
         <Panel title="Impact">
           {impact === null ? (
             <EmptyState>
-              No live disruption. The graph below shows the production at rest.
+              {/* Two different states, and saying the wrong one is worse than
+                  saying nothing: the event feed to the right can be showing a
+                  disruption while this panel still has no impact report,
+                  because impact is computed during recovery rather than on
+                  ingest. Claiming "no live disruption" next to a feed that says
+                  one arrived reads as a broken screen. */}
+              {eventId
+                ? "Disruption received. The impact appears here once recovery computes it."
+                : "No live disruption. The graph below shows the production at rest."}
             </EmptyState>
           ) : (
             <div className="grid grid-cols-2 gap-6 px-4 py-4 sm:grid-cols-5">
@@ -119,7 +147,7 @@ export default function DisruptionPage() {
                 nodesConnectable={false}
                 elementsSelectable={false}
               >
-                <Background color="#1a1e28" gap={18} />
+                <Background color="rgb(var(--board-600))" gap={18} />
                 <Controls showInteractive={false} />
               </ReactFlow>
             )}
@@ -183,7 +211,7 @@ function toFlow(graph: GraphPayload | null): { nodes: Node[]; edges: Edge[] } {
     id: edge.id,
     source: edge.source,
     target: edge.target,
-    style: { stroke: "#252b38", strokeWidth: 1 },
+    style: { stroke: "rgb(var(--board-500))", strokeWidth: 1 },
     animated: edge.kind === "PREREQUISITE",
   }));
 

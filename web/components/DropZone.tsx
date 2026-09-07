@@ -522,7 +522,7 @@ function Progress({
           style={{ width: indeterminate ? "100%" : `${Math.round(progress * 100)}%` }}
         />
       </div>
-      <p className="text-2xs uppercase tracking-[0.12em] text-chalk-600">
+      <p className="text-2xs text-chalk-600">
         {phase === "validating"
           ? "checking"
           : phase === "uploading"

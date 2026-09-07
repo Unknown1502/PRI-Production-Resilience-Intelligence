@@ -183,7 +183,7 @@ export default function ImportReviewPage() {
           // — so the control for it is pinned and never scrolls off.
         >
           <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-3 px-6 py-3">
-            <label className="flex items-center gap-2 text-2xs uppercase tracking-[0.12em] text-chalk-600">
+            <label className="flex items-center gap-2 text-2xs text-chalk-600">
               confirmed by
               <input
                 type="text"

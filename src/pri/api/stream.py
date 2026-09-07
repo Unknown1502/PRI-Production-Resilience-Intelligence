@@ -59,6 +59,15 @@ class StreamBroker:
 
     def __init__(self) -> None:
         self._subscribers: dict[str, set[asyncio.Queue[str]]] = defaultdict(set)
+        #: The last EVENT_RECEIVED announced per production, so the same
+        #: disruption is not narrated twice.
+        #:
+        #: Two callers legitimately announce it: the ingest route, because the
+        #: browser is already watching when the button is pressed, and the
+        #: recovery service, because a disruption arriving over Kafka reaches
+        #: no HTTP route at all. When both happen — the interactive path — the
+        #: timeline showed "Disruption received" twice for one event.
+        self._announced: dict[str, str] = {}
 
     def subscribe(self, production_id: str) -> asyncio.Queue[str]:
         """Register a new client and return its queue.
@@ -100,6 +109,13 @@ class StreamBroker:
             payload:       Stage-specific data for the UI to render.
         """
         frame = _format(stage, payload or {})
+        if stage is Stage.EVENT_RECEIVED:
+            event_id = str((payload or {}).get("event_id") or "")
+            if event_id and self._announced.get(production_id) == event_id:
+                return
+            if event_id:
+                self._announced[production_id] = event_id
+
         for queue in list(self._subscribers.get(production_id, ())):
             try:
                 queue.put_nowait(frame)

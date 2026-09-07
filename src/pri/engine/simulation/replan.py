@@ -19,7 +19,7 @@ is passed straight to the generator.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from pri.domain.models import (
@@ -28,6 +28,7 @@ from pri.domain.models import (
     DisruptionEvent,
     EvaluatedPlan,
     Move,
+    MoveSceneToDay,
     ProductionState,
     RecoveryResult,
     RoundTrace,
@@ -42,6 +43,7 @@ from pri.engine.simulation.candidates import (
     load_scoring_config,
 )
 from pri.engine.simulation.pareto import mark_pareto
+from pri.engine.simulation.projection import project_disruption
 from pri.engine.simulation.scoring import score
 from pri.persistence.serialization import state_to_snapshot
 
@@ -103,6 +105,17 @@ def recover(
     scenes_by_id = {s.id: s for s in state.scenes}
 
     impact = impact_of(state, event)
+
+    # Everything from here plans against the disruption as a constraint.
+    #
+    # An `actor.unavailable` event asserts that a person cannot work on given
+    # dates, and until that is in the state, C003 has nothing to check: the
+    # RELOCATE family produced plans that moved the blocked scenes to another
+    # location and left them on the day the actor was away, and they validated.
+    # See `simulation.projection`. The projection only ever adds a restriction,
+    # so it can turn a valid plan invalid but never the reverse, and it is
+    # never committed — execution recomputes from the real state.
+    state = project_disruption(state, event)
     hints = list(strategy_hints) if strategy_hints else []
 
     evaluated: list[EvaluatedPlan] = []
@@ -251,11 +264,19 @@ def build_repair(
     turnaround = next(
         (v for v in failed.violations if v.code == "C001" and v.severity == "HARD"), None
     )
-    if turnaround is None:
-        return None
+    unavailable = [v for v in failed.violations if v.code == "C003" and v.severity == "HARD"]
 
     intermediate = state.apply(list(failed.plan.moves))
-    repair_moves = _repair_turnaround(intermediate, turnaround, scenes_by_id, policy, config)
+
+    if turnaround is not None:
+        repair_moves = _repair_turnaround(intermediate, turnaround, scenes_by_id, policy, config)
+        repaired_code = turnaround.code
+    elif unavailable:
+        repair_moves = _repair_cast_availability(intermediate, unavailable)
+        repaired_code = "C003"
+    else:
+        return None
+
     if not repair_moves:
         return None
 
@@ -264,8 +285,79 @@ def build_repair(
         label=f"{failed.plan.label}2",
         base_version=state.version,
         moves=(*failed.plan.moves, *repair_moves),
-        rationale_hint=f"repair of {failed.plan.label} for {turnaround.code}",
+        rationale_hint=f"repair of {failed.plan.label} for {repaired_code}",
     )
+
+
+def _repair_cast_availability(
+    intermediate: ProductionState,
+    violations: list[ConstraintViolation],
+) -> tuple[Move, ...]:
+    """Move each scene the absent actor is still called for onto a free day.
+
+    The counterpart of `_repair_turnaround`, for the other disruption type the
+    live-injection endpoint accepts. A plan that leaves an actor's scene inside
+    their unavailable window cannot be repaired by shifting a call time — the
+    scene has to leave the day, and the only days it may go to are the reserve
+    days the board actually declares.
+
+    Inputs:
+        intermediate: The state the failed plan produced.
+        violations:   Its C003 violations. ``subject_ids`` is
+                      ``(person_id, scene_id, date)``.
+
+    Outputs:
+        One :class:`MoveSceneToDay` per offending scene. Empty when there is no
+        reserve day left to move to, which is a real answer: the schedule has
+        run out of room and the producer is told so rather than shown a plan
+        that pretends otherwise.
+    """
+    reserve = [
+        day.date
+        for day in sorted(intermediate.schedule.days, key=lambda d: d.date)
+        if day.is_available_for_scenes and day.date in intermediate.production.reserve_days
+    ]
+    if not reserve:
+        return ()
+
+    blocked_by_person: dict[str, set[date]] = {}
+    for person in intermediate.people:
+        blocked_by_person[person.id] = {
+            day.date
+            for day in intermediate.schedule.days
+            for window in person.unavailable_windows
+            if day.call_time < window.end and window.start < day.wrap_time
+        }
+
+    scenes_by_id = {scene.id: scene for scene in intermediate.scenes}
+    moves: list[Move] = []
+    seen: set[str] = set()
+    for violation in violations:
+        if len(violation.subject_ids) < 2:
+            continue
+        scene_id = violation.subject_ids[1]
+        if scene_id in seen:
+            continue
+        scene = scenes_by_id.get(scene_id)
+        if scene is None:
+            continue
+        # A reserve day nobody in the scene is unavailable on. Checking every
+        # cast member rather than only the one who triggered the violation
+        # stops the repair trading one absence for another.
+        target = next(
+            (
+                candidate
+                for candidate in reserve
+                if not any(candidate in blocked_by_person.get(pid, set()) for pid in scene.cast_ids)
+            ),
+            None,
+        )
+        if target is None:
+            continue
+        seen.add(scene_id)
+        moves.append(MoveSceneToDay(scene_id=scene_id, target_date=target))
+
+    return tuple(moves)
 
 
 def _repair_turnaround(

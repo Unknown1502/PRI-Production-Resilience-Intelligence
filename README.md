@@ -272,17 +272,37 @@ Full traceability in
   `config/scoring.yaml` are a production's own estimates. Nothing reconciles
   against a real budget system, and the plate-relocation penalty in particular
   is a judgement call we document rather than derive.
-- **The demo narrates one disruption type; all five are now tested.** The
-  candidate families were designed against `location.blocked`, so the other
-  four were untested rather than unsupported. Each of the five now runs the
-  full pipeline — impact, generation, validation, repair, scoring — and is
-  asserted to block real scenes, return at least one plan a producer could
-  approve, and never put an invalid plan on the Pareto frontier
+- **Two of the five disruption types are hardened. Three are not.** All five
+  compute impact and run the full pipeline — generation, validation, repair,
+  scoring — and each is asserted to block real scenes, return a plan a producer
+  could approve, and never put an invalid plan on the Pareto frontier
   ([`test_every_event_type_recovers.py`](tests/engine/simulation/test_every_event_type_recovers.py)).
-  The scoring weights are still tuned against `location.blocked`: the plans for
-  an `equipment.failed` event are valid and ranked, and whether that ranking
-  matches a producer's instinct is a judgement we have not gathered evidence
-  for.
+  That is a floor, not parity.
+
+  `location.blocked` and `actor.unavailable` are hardened, each with a narrated
+  scenario test that doubles as the demo script
+  ([`test_recovery_scenario.py`](tests/engine/simulation/test_recovery_scenario.py),
+  [`test_actor_unavailable_scenario.py`](tests/engine/simulation/test_actor_unavailable_scenario.py)).
+  These are the only two the live-injection endpoint accepts.
+
+  Hardening the second one found a real defect worth stating plainly. A
+  disruption's claim was never written into the state the planner validates
+  against, so C003 `cast_availability` had nothing to check: for an
+  `actor.unavailable` event, the RELOCATE family produced a plan that moved the
+  blocked scenes to a different location and **left them on the day the actor
+  was away**, and PRI marked it valid. SWAP moved *other* scenes needing the
+  same actor onto that day, flagged only for crew turnaround. `location.blocked`
+  never showed this because moving a scene elsewhere genuinely resolves a
+  blocked location — which is exactly why one type looked hardened and the
+  other was not. The fix is a projection, not a new rule: the event's window
+  becomes a fact the existing validator reads
+  ([`projection.py`](src/pri/engine/simulation/projection.py)).
+
+  `equipment.failed`, `weather.changed` and `crew.unavailable` have had no such
+  pass. They generate valid, scored plans; whether those are the plans a
+  producer would want is untested, and the same class of defect may well be
+  sitting in them. They are refused by the live-injection endpoint for that
+  reason.
 - **Call sheets are durable, but nobody is served a link to one.** They now go
   to a Cloud Storage bucket keyed `<production>/v<version>/<date>.pdf`, so the
   `artifacts` row and the document it references survive the same deploy —

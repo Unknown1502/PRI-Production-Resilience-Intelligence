@@ -575,6 +575,15 @@ def _extract_window(
     return start, end
 
 
+#: Public alias, for `simulation.projection`.
+#:
+#: The projection has to derive the same window the impact did, from the same
+#: payload, including the fallback when the event carries no window at all.
+#: Parsing it a second time somewhere else is how the blast radius and the
+#: constraint end up disagreeing about which days a disruption covers.
+extract_window = _extract_window
+
+
 # ---------------------------------------------------------------------------
 # Lazy node creation helpers (prevent KeyError for cross-reference nodes)
 # ---------------------------------------------------------------------------

@@ -1,0 +1,76 @@
+# PRI API — FastAPI on Cloud Run.
+#
+# Multi-stage so the runtime image carries no build toolchain. Non-root, because
+# a container that can write to its own site-packages is a container that can be
+# made to run something else.
+
+# ---------------------------------------------------------------------------
+# Stage 1 — build the virtualenv
+# ---------------------------------------------------------------------------
+FROM python:3.12-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# librdkafka needs a compiler; reportlab needs zlib and freetype headers.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        librdkafka-dev \
+        zlib1g-dev \
+        libfreetype6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Dependency layer first: source changes do not invalidate the wheel build.
+# LICENSE too: pyproject declares `license = { file = "LICENSE" }`, and
+# hatchling refuses to build metadata without it. Omitting it failed the
+# dependency layer, which is why this image had never been built.
+COPY pyproject.toml README.md LICENSE ./
+COPY src/pri/__init__.py src/pri/__init__.py
+RUN pip install --upgrade pip setuptools wheel && pip install .
+
+COPY src/ src/
+RUN pip install --no-deps .
+
+# ---------------------------------------------------------------------------
+# Stage 2 — runtime
+# ---------------------------------------------------------------------------
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends librdkafka1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 pri
+
+COPY --from=builder /opt/venv /opt/venv
+
+WORKDIR /app
+COPY --chown=pri:pri config/ config/
+COPY --chown=pri:pri data/ data/
+COPY --chown=pri:pri src/pri/persistence/migrations/ src/pri/persistence/migrations/
+
+# Call sheets are written here. Cloud Run's filesystem is ephemeral, which is
+# correct: the artifact table records the path, and a regenerated version
+# rewrites it. Nothing durable lives on disk.
+RUN mkdir -p /app/artifacts && chown -R pri:pri /app/artifacts
+ENV PRI_ARTIFACT_ROOT=/app/artifacts/call_sheets
+
+USER pri
+
+# Cloud Run injects PORT; the default matches local development.
+ENV PORT=8080
+EXPOSE 8080
+
+# One worker. The recovery pipeline is CPU-light and the SSE broker is
+# in-process, so a second worker in the same container would give half the
+# clients a stream that never fires.
+CMD exec uvicorn pri.api.main:app --host 0.0.0.0 --port ${PORT} --workers 1

@@ -1,0 +1,61 @@
+# PRI recovery consumer — the Confluent listener.
+#
+# Deployed to Cloud Run with min-instances 1, which makes it the only always-on
+# component and the project's only standing charge. That is deliberate: a
+# consumer that scales to zero is a consumer that is not listening when the
+# location manager calls.
+
+FROM python:3.12-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        librdkafka-dev \
+        zlib1g-dev \
+        libfreetype6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# LICENSE too: pyproject declares `license = { file = "LICENSE" }`, and
+# hatchling refuses to build metadata without it. Omitting it failed the
+# dependency layer, which is why this image had never been built.
+COPY pyproject.toml README.md LICENSE ./
+COPY src/pri/__init__.py src/pri/__init__.py
+RUN pip install --upgrade pip setuptools wheel && pip install .
+
+COPY src/ src/
+RUN pip install --no-deps .
+
+# ---------------------------------------------------------------------------
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends librdkafka1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 pri
+
+COPY --from=builder /opt/venv /opt/venv
+
+WORKDIR /app
+COPY --chown=pri:pri config/ config/
+COPY --chown=pri:pri data/ data/
+
+USER pri
+
+# The runner traps SIGTERM and finishes the message it is holding before it
+# leaves the consumer group, so Cloud Run's shutdown does not strand an offset.
+STOPSIGNAL SIGTERM
+
+CMD ["python", "-m", "pri.events.runner"]

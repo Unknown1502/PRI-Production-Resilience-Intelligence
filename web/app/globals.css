@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-ink-900 text-chalk-200 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04";
+  }
+
+  /* Every figure on screen is a real number from the API, and columns of
+     numbers only read as columns when the digits line up. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+    @apply font-mono;
+  }
+
+  ::selection {
+    @apply bg-clear/30 text-chalk-100;
+  }
+
+  /* A control room is scrolled a lot; the default Windows scrollbar is a slab
+     of light grey in the middle of a dark screen. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-ink-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-ink-600;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-500;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-lg border border-ink-700 bg-ink-850;
+  }
+
+  .panel-header {
+    @apply flex items-baseline justify-between border-b border-ink-700 px-4 py-2.5;
+  }
+
+  .panel-title {
+    @apply text-2xs font-semibold uppercase tracking-[0.14em] text-chalk-600;
+  }
+
+  .field-label {
+    @apply text-2xs uppercase tracking-[0.12em] text-chalk-600;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium
+           transition-colors disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .btn-quiet {
+    @apply btn border-ink-600 bg-ink-800 text-chalk-200 hover:border-ink-500 hover:bg-ink-700;
+  }
+
+  .btn-go {
+    @apply btn border-clear-dim bg-clear-wash text-clear hover:border-clear hover:bg-clear/20;
+  }
+
+  .btn-stop {
+    @apply btn border-alert-dim bg-alert-wash text-alert hover:border-alert hover:bg-alert/20;
+  }
+
+  .row-hover {
+    @apply transition-colors hover:bg-ink-800/70;
+  }
+}
+
+/* @xyflow/react ships a light theme; these override the parts that would glow
+   white on a dark canvas. */
+.react-flow__attribution {
+  display: none;
+}
+
+.react-flow__controls-button {
+  background: #12151c;
+  border-bottom: 1px solid #1a1e28;
+  fill: #9aa3b4;
+}
+
+.react-flow__controls-button:hover {
+  background: #1a1e28;
+}

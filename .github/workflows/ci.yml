@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  backend:
+    name: backend (ruff, mypy, pytest)
+    runs-on: ubuntu-latest
+
+    # The persistence, transition and API suites are transactional guarantees.
+    # A fake repository would happily "roll back" a write it never made, so CI
+    # runs them against a real Postgres.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pri_user
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: pri
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pri_user -d pri"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install librdkafka
+        run: sudo apt-get update && sudo apt-get install -y librdkafka-dev
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Configure environment
+        # Placeholder credentials only. Anything that needs a real cloud
+        # credential is marked `integration` and skipped below, not failed.
+        run: |
+          cp .env.example .env
+          sed -i 's|^DATABASE_URL=.*|DATABASE_URL=postgresql+asyncpg://pri_user:changeme@localhost:5432/pri|' .env
+          sed -i 's|^GOOGLE_APPLICATION_CREDENTIALS=.*|GOOGLE_APPLICATION_CREDENTIALS=|' .env
+          sed -i 's|^PRI_API_KEY=.*|PRI_API_KEY=ci-key|' .env
+          echo "GIT_SHA=${GITHUB_SHA::7}" >> .env
+
+      - name: ruff check
+        run: ruff check src tests scripts
+
+      - name: ruff format
+        run: ruff format --check src tests scripts
+
+      - name: mypy (strict on domain + engine)
+        run: mypy src/pri
+
+      - name: pytest
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://pri_user:changeme@localhost:5432/pri
+        run: pytest -q -m "not integration" --tb=short
+
+      - name: The demo scenario, named
+        # Printed separately so a reviewer can see the six non-negotiable
+        # assertions pass without reading the whole log.
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://pri_user:changeme@localhost:5432/pri
+        run: pytest tests/engine/simulation/test_recovery_scenario.py -v --tb=short
+
+  frontend:
+    name: frontend (tsc, eslint, next build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run build
+
+  compliance:
+    name: compliance (no forbidden AI SDKs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No non-Google AI SDK anywhere in the source
+        # The contest rules prohibit all non-Google AI tooling. This is cheaper
+        # to enforce in CI than to discover during judging.
+        run: |
+          set -e
+          pattern='langchain|langgraph|crewai|autogen|^import openai|from openai|anthropic|boto3.*bedrock|azure\.ai'
+          if grep -rniE "$pattern" src/ web/lib web/app web/components 2>/dev/null; then
+            echo "::error::A forbidden AI SDK reference was found in the source tree."
+            exit 1
+          fi
+          echo "Clean: google-adk and google-genai only."
+
+      - name: Apache-2.0 licence is present and unmodified
+        run: |
+          test -f LICENSE
+          grep -q "Apache License" LICENSE
+          grep -q "Version 2.0, January 2004" LICENSE
+          echo "LICENSE is stock Apache-2.0."

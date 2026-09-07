@@ -1,0 +1,28 @@
+PRI verify — 2026-09-06 16:14:17 UTC
+target: http://127.0.0.1:8000
+
+
+[1m1 · Health[0m
+  {"status":"degraded","version":"0.1.0","git_sha":"unknown","checks":{"database":"ok","kafka":"degraded","gemini":"configured"},"database":"up","agent_enabled":false,"kafka":{"status":"degraded","topics":["pri.production.events","pri.recovery.requested","pri.recovery.completed","pri.audit"],"reachable":false,"last_error":null,"delivered":0,"failed":0,"degraded":false,"reopens_in_seconds":0.0},"at":"2026-09-06T16:14:17.457142Z"}
+  [32mPASS[0m  /health returns 200
+  [32mPASS[0m  database ok
+  [32mPASS[0m  kafka degraded (allowed: not on the critical path)
+
+[1m2 · The overview returns a production[0m
+  [32mPASS[0m  schedule for film-001 has days
+
+[1m3 · A disruption produces candidates, including an invalid one[0m
+  [31mFAIL[0m  event rejected: {"detail":[{"type":"float_parsing","loc":["body","severity"],"msg":"Input should be a valid number, unable to parse string as a number","input":"HIGH"}]}
+  [31mFAIL[0m  recovery returned no candidates: {"detail":"Event 'verify-20260906T161417Z' has not been recorded"}
+  [31mFAIL[0m  every candidate was valid — the invalid-plan evidence is missing
+  ....  no C001 in this run (not necessarily wrong)
+
+[1m4 · Demo reset[0m
+  [32mPASS[0m  demo reset succeeded
+  [32mPASS[0m  reset left the production at version 1
+
+[1m5 · A call sheet downloads as a real PDF[0m
+  [32mPASS[0m  call sheet for 2026-09-08 is a PDF (3373 bytes)
+
+[1m7 passed, 3 failed[0m
+evidence: /c/Users/prajw/OneDrive/Desktop/AGENTIC CINEMA MAIN/docs/evidence/runtime/verify-20260906T161417Z.log

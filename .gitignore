@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.cache/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# uv
+.uv/
+uv.lock
+
+# Secrets / local config
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.npm/
+*.tsbuildinfo
+next-env.d.ts
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Generated artifacts.
+#
+# NOT ibm/bob/artifacts/ — that is hand-written session evidence and the single
+# most important thing in the repository for a watsonx judge. An earlier rule
+# excluded it, which would have published a submission with its evidence trail
+# silently missing.
+artifacts/call_sheets/
+web/screenshots/
+
+# Downloaded credential files. Confluent Cloud and GCP both hand these out as
+# loose files with predictable names, and they land in whatever directory the
+# browser was pointed at — which is how a working key reaches a public repo.
+api-key-*.txt
+*-credentials.json
+*-service-account*.json
+client.properties

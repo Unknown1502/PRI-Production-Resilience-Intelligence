@@ -1,0 +1,28 @@
+PRI verify — 2026-09-06 16:14:48 UTC
+target: http://127.0.0.1:8000
+
+
+[1m1 · Health[0m
+  {"status":"degraded","version":"0.1.0","git_sha":"unknown","checks":{"database":"ok","kafka":"degraded","gemini":"configured"},"database":"up","agent_enabled":false,"kafka":{"status":"degraded","topics":["pri.production.events","pri.recovery.requested","pri.recovery.completed","pri.audit"],"reachable":false,"last_error":null,"delivered":0,"failed":0,"degraded":false,"reopens_in_seconds":0.0},"at":"2026-09-06T16:14:48.505461Z"}
+  [32mPASS[0m  /health returns 200
+  [32mPASS[0m  database ok
+  [32mPASS[0m  kafka degraded (allowed: not on the critical path)
+
+[1m2 · The overview returns a production[0m
+  [32mPASS[0m  schedule for film-001 has days
+
+[1m3 · A disruption produces candidates, including an invalid one[0m
+  [32mPASS[0m  event accepted
+  [32mPASS[0m  recovery returned candidates
+  [32mPASS[0m  at least one candidate was rejected by the validator
+  [32mPASS[0m  a constraint code appears in the response
+
+[1m4 · Demo reset[0m
+  [32mPASS[0m  demo reset succeeded
+  [32mPASS[0m  reset left the production at version 1
+
+[1m5 · A call sheet downloads as a real PDF[0m
+  [32mPASS[0m  call sheet for 2026-09-08 is a PDF (3374 bytes)
+
+[1m11 passed, 0 failed[0m
+evidence: /c/Users/prajw/OneDrive/Desktop/AGENTIC CINEMA MAIN/docs/evidence/runtime/verify-20260906T161448Z.log

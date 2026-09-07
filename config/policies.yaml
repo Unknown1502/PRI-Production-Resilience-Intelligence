@@ -1,0 +1,32 @@
+# PRI Policy Configuration
+# All constraint rules read their thresholds from this file at startup.
+# Changes here take effect on the next application restart.
+# Units: hours for time values, dimensionless for booleans.
+
+crew_turnaround:
+  minimum_hours: 10.0          # wrap[day-n] -> call[day-n+1] minimum rest
+
+shooting:
+  maximum_daily_hours: 12.0    # maximum (wrap - call) per shooting day
+
+location:
+  no_double_booking: true      # two units may not share a location on the same day
+  respect_permit_windows: true # shooting day must fall inside permit windows
+
+cast:
+  unavailable_dates_are_hard: true  # no scheduling inside cast unavailable_windows
+
+equipment:
+  no_double_booking: true       # same piece of equipment on two units same day
+  respect_rental_windows: true  # equipment used outside its available_windows
+
+dependencies:
+  preserve_prerequisite_order: true  # prereq scene must be on an earlier date
+
+scene_environment:
+  enforce_int_ext_match: true    # scene INT/EXT must be in location.supports_int_ext
+  enforce_time_of_day_match: true # scene time_of_day must be in location.supports_time_of_day
+
+approval:
+  schedule_change:
+    required: true               # any schedule mutation requires an approval record

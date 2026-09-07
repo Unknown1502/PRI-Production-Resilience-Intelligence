@@ -1,0 +1,41 @@
+# Call-sheet reference data.
+#
+# This is deliberately NOT part of ProductionState. None of it affects a
+# constraint rule, a cost or a plan — a hospital address cannot make a schedule
+# illegal — so versioning it would add churn to the state chain for no gain.
+# It is looked up at render time by src/pri/artifacts/call_sheet.py.
+
+defaults:
+  weather: "Hot and humid, 31C, scattered afternoon showers"
+  sunrise: "06:14"
+  sunset: "18:26"
+  hospital: "Ernakulam General Hospital, Hospital Road, Kochi - 0484 2360002"
+
+locations:
+  LOC-01:
+    address: "Chitranjali Studio Complex, Stage A, Thiruvananthapuram"
+    parking: "Unit base in the north yard; crew parking off Gate 2"
+    hospital: "KIMS Hospital, Anayara - 0471 3041000"
+  LOC-02:
+    address: "Princess Street, Fort Kochi, Ernakulam 682001"
+    parking: "Basecamp at Parade Ground; no unit vehicles past the barricade"
+    hospital: "Fort Kochi Government Hospital - 0484 2215055"
+  LOC-03:
+    address: "Warehouse 7, Mattancherry Wharf Road, Kochi 682002"
+    parking: "Trucks on the wharf apron; cast cars at the spice market lot"
+    hospital: "Ernakulam General Hospital, Hospital Road - 0484 2360002"
+  LOC-04:
+    address: "Mattancherry Palace Courtyard, Palace Road, Kochi 682002"
+    parking: "Unit base at Jew Town car park, 300m walk to set"
+    hospital: "Ernakulam General Hospital, Hospital Road - 0484 2360002"
+  LOC-07:
+    address: "Chitranjali Studio Complex, Standing Set 3, Thiruvananthapuram"
+    parking: "Unit base in the north yard"
+    hospital: "KIMS Hospital, Anayara - 0471 3041000"
+
+# Minutes before crew call that cast are picked up and brought to set. Real
+# call sheets carry these per person; one production-wide figure is enough for
+# the demo and keeps the fixture honest about what it does not model.
+cast_timings:
+  pickup_minutes_before_call: 60
+  on_set_minutes_after_call: 30

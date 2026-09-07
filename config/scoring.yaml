@@ -1,0 +1,95 @@
+# PRI Plan Scoring Configuration
+#
+# Every number the scorer produces comes from this file. There is no numeric
+# literal in the scoring arithmetic by design: the demo narration quotes these
+# figures, so a judge must be able to audit the model by reading one YAML file
+# rather than reverse-engineering it from code.
+#
+# Money is expressed as strings and parsed into Decimal — a float never touches
+# a currency amount. Time is in hours unless the key says otherwise.
+
+delay:
+  # How the per-scene slips collapse into one number.
+  #   duration_weighted_mean_slip — weight each slip by how much work moved, so
+  #       pushing a 45-minute pickup six days scores far below pushing three and
+  #       a half hours of plates the same distance
+  #   max_scene_slip  — the worst-hit scene alone
+  #   mean_scene_slip — the unweighted average across everything that moved
+  measure: duration_weighted_mean_slip
+
+  # A slipped VFX plate hurts twice: it moves, and it moves a delivery the
+  # vendor has already locked a date for.
+  vfx_plate_slip_multiplier: 2.0
+
+  # A relocated plate lands late even though its scene shoots on time: the
+  # location has to be re-scouted, a new reference plate shot, and the vendor
+  # re-briefed against a lock date they have already committed to.
+  vfx_plate_relocation_slip_days: 2.5
+
+  # A plan that moves no scene but reshapes a day still costs part of a day.
+  call_time_shift_day_equivalent: 0.1
+
+cost:
+  # A day that loses all its work does not release its cast: the call is
+  # already committed, so they are paid a holding rate — this fraction of the
+  # contracted day rate. Cast merely not called on a day that still shoots are
+  # released normally and cost nothing.
+  cast_holding_rate_fraction: "0.5"
+
+  # A location booked for a day that no longer shoots is not refunded. Set
+  # false to credit the released day back against the plan's cost.
+  forfeit_released_location: true
+
+  # Crew overtime beyond the baseline day, blended across the 34-person unit.
+  overtime_rate_per_hour: "210"
+
+  # Flat cost of activating a reserve day: unit call-out, transport, catering.
+  reserve_day_activation_fee: "0"
+
+  # Relocating a scene that carries a VFX plate is not a free change of
+  # address. The plate is the background: moving it means re-scouting,
+  # re-shooting the reference and re-briefing the vendor. This is the
+  # production's estimate of that rework, per relocated plate scene.
+  vfx_plate_relocation_penalty: "5000"
+
+risk:
+  # operational_risk is a weighted sum of normalised factors, clamped to [0, 1].
+  # Weights must sum to 1.0 — scoring.py raises ScoringError if they do not,
+  # because a silently mis-weighted risk score is worse than no risk score.
+  #
+  # vfx_plate_relocation carries the most weight, and deliberately so: it is
+  # the only factor here whose failure surfaces after wrap. A weather day or a
+  # held actor is visible and recoverable while the unit is still standing; a
+  # plate shot against the wrong background is discovered in post, when there
+  # is nothing left to reshoot it with.
+  weights:
+    night_moves: 0.10 # scenes newly shot at NIGHT or DUSK
+    ext_weather_exposure: 0.20 # EXT scenes moved to a new date
+    reserve_days_consumed: 0.15 # slack spent is slack unavailable next time
+    cast_holding: 0.10 # contracted cast held on a struck day
+    vfx_plate_relocation: 0.45 # a plate shot against the wrong background
+
+  # Each factor is divided by its saturation point before weighting: a plan at
+  # or beyond the saturation point scores 1.0 on that factor.
+  saturation:
+    night_moves: 3.0
+    ext_weather_exposure: 3.0
+    reserve_days_consumed: 2.0
+    cast_holding: 4.0
+    vfx_plate_relocation: 2.0
+
+capacity:
+  # Turnaround between setups: unit move, relight, rehearsal. Charged per scene
+  # scheduled on a day, on top of the scenes' own estimated_minutes.
+  setup_minutes_per_scene: 15
+
+  # The hard ceiling a compressed day must still respect. Mirrors
+  # config/policies.yaml shooting.maximum_daily_hours; the planner reads it
+  # from here so a candidate is never generated that rule C002 would reject.
+  maximum_daily_hours: 12.0
+
+repair:
+  # When a plan busts the crew-turnaround minimum, the repair moves the call to
+  # the earliest legal time plus this buffer. Landing exactly on the minimum
+  # leaves a plan that a five-minute overrun the night before invalidates.
+  turnaround_buffer_minutes: 30

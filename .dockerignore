@@ -1,0 +1,36 @@
+# Never ship secrets, caches, or the developer's local state.
+.env
+.env.*
+!.env.example
+
+# Downloaded credential files. These arrive with predictable names in whatever
+# directory the browser was pointed at, and a build context is a very easy way
+# to bake one into an image layer.
+api-key-*.txt
+*-credentials.json
+*-service-account*.json
+client.properties
+
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+web/node_modules/
+web/.next/
+web/out/
+
+.git/
+.github/
+artifacts/
+docs/
+ibm/
+tests/
+*.md
+!README.md
+docker-compose*.yml
+Dockerfile*

@@ -1,0 +1,142 @@
+# The whole of PRI, locally, in the same shape it runs on Cloud Run.
+#
+#   docker compose up --build
+#   → web      http://localhost:3000
+#     api      http://localhost:8000
+#     consumer http://localhost:8081/  (health only)
+#
+# This is worth running before deploy.sh, because it exercises the real images
+# rather than the developer's virtualenv. Everything that broke on Cloud Run
+# would break here first: a missing system library, a non-root user that cannot
+# write, an environment variable the container needs and the host happened to
+# already have.
+#
+# Two differences from Cloud Run, both deliberate:
+#
+#   Postgres runs in a container over TCP rather than a Cloud SQL unix socket.
+#   The DSN shape differs, which is exactly why `Settings.database_url` is
+#   validated with SQLAlchemy and accepts both.
+#
+#   Google credentials come from the host's Application Default Credentials,
+#   mounted read-only. On Cloud Run the service account supplies them and
+#   nothing is mounted. Neither path sets GOOGLE_APPLICATION_CREDENTIALS — the
+#   auth library finds the file at its default location on its own.
+#
+# Configuration comes from `.env`, with the handful of values that must differ
+# inside the network overridden per service.
+
+name: pri
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: pri
+      POSTGRES_USER: pri_user
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pri_user -d pri"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Migrations, then the demo fixture at version 1. Runs to completion and
+  # exits; everything else waits for it. The same image and the same command
+  # the `pri-seed` Cloud Run job uses.
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pri_user:changeme@postgres:5432/pri
+      PRI_ENV: development
+    command: ["python", "-m", "pri.persistence.bootstrap"]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pri_user:changeme@postgres:5432/pri
+      PRI_ENV: development
+      PORT: 8080
+    ports:
+      - "8000:8080"
+    volumes:
+      # Read-only, and at the path google-auth looks in by default so no
+      # GOOGLE_APPLICATION_CREDENTIALS is needed. Without this the agent falls
+      # back to deterministic mode and /health says gemini unconfigured.
+      - ${APPDATA}/gcloud/application_default_credentials.json:/home/pri/.config/gcloud/application_default_credentials.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      # /health is 200 whenever the API can serve, and 503 only when the
+      # database is unreachable — so this tracks the real thing.
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8080/health', timeout=5).status==200 else 1)"]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+      start_period: 20s
+
+  # The asynchronous ingestion route: an external system publishes a disruption
+  # to the topic and PRI acts on it with nobody watching. Refuses to start
+  # without Confluent credentials rather than retrying a SASL-less connection.
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://pri_user:changeme@postgres:5432/pri
+      PRI_ENV: development
+      # Cloud Run injects PORT and requires the container to listen on it. The
+      # runner serves a health endpoint only when PORT is present, so setting
+      # it here exercises the same path.
+      PORT: 8080
+      # The consumer runs recovery by calling the API, so the SSE stream lights
+      # up for anyone watching the console. Without this it falls back to
+      # PRI_API_HOST:PORT — which inside this container is itself, and nothing
+      # is listening there.
+      PRI_API_INTERNAL_URL: http://api:8080
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+      api:
+        condition: service_healthy
+    restart: on-failure
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    environment:
+      # The browser never sees either of these. The Next.js proxy at
+      # /api/pri reads them per request, server-side.
+      PRI_API_BASE_URL: http://api:8080
+      PRI_API_KEY: ${PRI_API_KEY:-}
+      PORT: 8080
+    ports:
+      - "3000:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "_comment": [
+    "The PRI demo production. Every number here is load-bearing: the recovery",
+    "scenario in ibm/bob/prompts/APPENDIX_A_demo_fixture.md depends on these exact",
+    "values. Do not round times, do not add scenes, do not 'improve' the rates.",
+    "All clock times are production-local (Asia/Kolkata, +05:30) and are stored",
+    "with an explicit UTC offset so every arithmetic comparison is exact."
+  ],
+  "timezone_offset": "+05:30",
+
+  "production": {
+    "id": "film-001",
+    "title": "Night Train to Kochi",
+    "currency": "USD",
+    "shoot_start": "2026-09-08",
+    "shoot_end": "2026-10-03",
+    "reserve_days": ["2026-09-16", "2026-09-30"]
+  },
+
+  "locations": [
+    {
+      "id": "LOC-01",
+      "name": "Studio Stage A",
+      "kind": "studio",
+      "day_rate": "3000",
+      "permit_daily": null,
+      "supports_int_ext": ["INT"],
+      "supports_time_of_day": ["DAY", "NIGHT"]
+    },
+    {
+      "id": "LOC-02",
+      "name": "Fort Kochi Street",
+      "kind": "street",
+      "day_rate": "4200",
+      "permit_daily": { "start": "06:00", "end": "20:00" },
+      "supports_int_ext": ["EXT"],
+      "supports_time_of_day": ["DAY", "DUSK"]
+    },
+    {
+      "id": "LOC-03",
+      "name": "Harbour Warehouse",
+      "kind": "warehouse",
+      "day_rate": "3800",
+      "permit_daily": { "start": "12:00", "end": "02:00" },
+      "supports_int_ext": ["INT", "EXT"],
+      "supports_time_of_day": ["NIGHT", "DUSK"]
+    },
+    {
+      "id": "LOC-04",
+      "name": "Mattancherry Courtyard",
+      "kind": "courtyard",
+      "day_rate": "6500",
+      "permit_daily": { "start": "07:00", "end": "19:00" },
+      "supports_int_ext": ["EXT"],
+      "supports_time_of_day": ["DAY"]
+    },
+    {
+      "id": "LOC-07",
+      "name": "Standing Set - Warehouse INT",
+      "kind": "standing_set",
+      "day_rate": "1200",
+      "permit_daily": null,
+      "supports_int_ext": ["INT"],
+      "supports_time_of_day": ["DAY", "NIGHT"]
+    }
+  ],
+
+  "people": [
+    {
+      "id": "P01",
+      "name": "Arun",
+      "role": "CAST",
+      "character": "Arun",
+      "daily_rate": "2400",
+      "unavailable_ranges": []
+    },
+    {
+      "id": "P02",
+      "name": "Meera",
+      "role": "CAST",
+      "character": "Meera",
+      "daily_rate": "2600",
+      "unavailable_ranges": [{ "from": "2026-09-12", "to": "2026-09-14" }]
+    },
+    {
+      "id": "P03",
+      "name": "Dev",
+      "role": "CAST",
+      "character": "Dev",
+      "daily_rate": "1100",
+      "unavailable_ranges": []
+    },
+    {
+      "id": "P04",
+      "name": "Kiran",
+      "role": "CAST",
+      "character": "Kiran",
+      "daily_rate": "900",
+      "unavailable_ranges": []
+    },
+    {
+      "id": "CREW-MAIN",
+      "name": "MAIN unit (34 crew)",
+      "role": "CREW",
+      "character": null,
+      "daily_rate": "0",
+      "unavailable_ranges": []
+    }
+  ],
+
+  "crew": {
+    "unit": "MAIN",
+    "headcount": 34,
+    "blended_overtime_rate_per_hour": "210"
+  },
+
+  "equipment": [
+    {
+      "id": "CAM-01",
+      "name": "Alexa 35",
+      "kind": "camera",
+      "daily_rate": "950",
+      "available_range": null
+    },
+    {
+      "id": "CRANE-01",
+      "name": "Technocrane",
+      "kind": "crane",
+      "daily_rate": "1800",
+      "available_range": { "from": "2026-09-09", "to": "2026-09-11" }
+    },
+    {
+      "id": "STEADI-01",
+      "name": "Steadicam",
+      "kind": "camera_support",
+      "daily_rate": "700",
+      "available_range": null
+    }
+  ],
+
+  "scenes": [
+    {
+      "id": "S12", "number": "12", "slug": "sc012",
+      "description": "Arun boards the night train",
+      "int_ext": "INT", "time_of_day": "DAY", "estimated_minutes": 120,
+      "location_id": "LOC-01", "cast_ids": ["P01"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S13", "number": "13", "slug": "sc013",
+      "description": "Compartment argument",
+      "int_ext": "INT", "time_of_day": "DAY", "estimated_minutes": 150,
+      "location_id": "LOC-01", "cast_ids": ["P01", "P03"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S15", "number": "15", "slug": "sc015",
+      "description": "Chase through Fort Kochi",
+      "int_ext": "EXT", "time_of_day": "DAY", "estimated_minutes": 165,
+      "location_id": "LOC-02", "cast_ids": ["P01", "P04"],
+      "equipment_ids": ["CAM-01", "STEADI-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S16", "number": "16", "slug": "sc016",
+      "description": "Dev loses the tail",
+      "int_ext": "EXT", "time_of_day": "DAY", "estimated_minutes": 135,
+      "location_id": "LOC-02", "cast_ids": ["P03"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S17", "number": "17", "slug": "sc017",
+      "description": "Courtyard confrontation",
+      "int_ext": "EXT", "time_of_day": "DAY", "estimated_minutes": 210,
+      "location_id": "LOC-04", "cast_ids": ["P01", "P02"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": true, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S18", "number": "18", "slug": "sc018",
+      "description": "Meera leaves the courtyard",
+      "int_ext": "EXT", "time_of_day": "DAY", "estimated_minutes": 180,
+      "location_id": "LOC-04", "cast_ids": ["P01", "P03"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": true, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S21", "number": "21", "slug": "sc021",
+      "description": "Kiran waits by the gate",
+      "int_ext": "EXT", "time_of_day": "DAY", "estimated_minutes": 45,
+      "location_id": "LOC-04", "cast_ids": ["P04"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S24", "number": "24", "slug": "sc024",
+      "description": "Warehouse interrogation",
+      "int_ext": "INT", "time_of_day": "NIGHT", "estimated_minutes": 240,
+      "location_id": "LOC-03", "cast_ids": ["P01", "P04"],
+      "equipment_ids": ["CAM-01", "CRANE-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S25", "number": "25", "slug": "sc025",
+      "description": "Harbour escape",
+      "int_ext": "EXT", "time_of_day": "NIGHT", "estimated_minutes": 195,
+      "location_id": "LOC-03", "cast_ids": ["P01", "P03"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S28", "number": "28", "slug": "sc028",
+      "description": "Meera reads the letter",
+      "int_ext": "INT", "time_of_day": "DAY", "estimated_minutes": 150,
+      "location_id": "LOC-01", "cast_ids": ["P02"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": ["S18"]
+    },
+    {
+      "id": "S29", "number": "29", "slug": "sc029",
+      "description": "Arun packs the case",
+      "int_ext": "INT", "time_of_day": "DAY", "estimated_minutes": 120,
+      "location_id": "LOC-01", "cast_ids": ["P01"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S30", "number": "30", "slug": "sc030",
+      "description": "Station platform goodbye",
+      "int_ext": "INT", "time_of_day": "DAY", "estimated_minutes": 135,
+      "location_id": "LOC-01", "cast_ids": ["P01"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    },
+    {
+      "id": "S31", "number": "31", "slug": "sc031",
+      "description": "Dev burns the ledger",
+      "int_ext": "INT", "time_of_day": "NIGHT", "estimated_minutes": 105,
+      "location_id": "LOC-01", "cast_ids": ["P03"], "equipment_ids": ["CAM-01"],
+      "vfx_plate": false, "prerequisite_scene_ids": []
+    }
+  ],
+
+  "schedule": [
+    {
+      "date": "2026-09-08", "location_id": "LOC-01",
+      "call": "08:00", "wrap": "19:00",
+      "scene_ids": ["S12", "S13"], "unit": "MAIN", "reserve": false
+    },
+    {
+      "date": "2026-09-09", "location_id": "LOC-02",
+      "call": "07:00", "wrap": "18:00",
+      "scene_ids": ["S15", "S16"], "unit": "MAIN", "reserve": false
+    },
+    {
+      "date": "2026-09-10", "location_id": "LOC-04",
+      "call": "07:00", "wrap": "19:00",
+      "scene_ids": ["S17", "S18", "S21"], "unit": "MAIN", "reserve": false
+    },
+    {
+      "date": "2026-09-11", "location_id": "LOC-03",
+      "call": "12:00", "wrap": "22:00",
+      "scene_ids": ["S24", "S25"], "unit": "MAIN", "reserve": false
+    },
+    {
+      "date": "2026-09-12", "location_id": "LOC-01",
+      "call": "08:00", "wrap": "18:00",
+      "scene_ids": ["S30", "S31"], "unit": "MAIN", "reserve": false
+    },
+    {
+      "date": "2026-09-15", "location_id": "LOC-01",
+      "call": "08:00", "wrap": "19:00",
+      "scene_ids": ["S29"], "unit": "MAIN", "reserve": false
+    },
+    {
+      "date": "2026-09-16", "location_id": "LOC-04",
+      "call": "07:00", "wrap": "19:00",
+      "scene_ids": [], "unit": "MAIN", "reserve": true
+    },
+    {
+      "date": "2026-09-17", "location_id": "LOC-01",
+      "call": "08:00", "wrap": "18:00",
+      "scene_ids": ["S28"], "unit": "MAIN", "reserve": false
+    },
+    {
+      "date": "2026-09-30", "location_id": "LOC-04",
+      "call": "07:00", "wrap": "19:00",
+      "scene_ids": [], "unit": "MAIN", "reserve": true
+    }
+  ],
+
+  "disruption": {
+    "event_id": "evt-loc04-blocked",
+    "production_id": "film-001",
+    "event_type": "location.blocked",
+    "occurred_at": "2026-09-09T18:40:00",
+    "source": "location_manager",
+    "severity_label": "high",
+    "severity": 0.8,
+    "payload": {
+      "location_id": "LOC-04",
+      "window_start": "2026-09-10T00:00:00",
+      "window_end": "2026-09-11T00:00:00",
+      "reason": "Municipal permit withdrawn for a festival procession"
+    }
+  }
+}

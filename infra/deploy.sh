@@ -40,6 +40,8 @@ PROJECT_ID="${GOOGLE_CLOUD_PROJECT:?set GOOGLE_CLOUD_PROJECT}"
 REGION="${GOOGLE_CLOUD_LOCATION:-${GOOGLE_CLOUD_REGION:-us-central1}}"
 REPO="${ARTIFACT_REPO:-pri}"
 SQL_INSTANCE="${SQL_INSTANCE:-pri-db}"
+# Bucket names are globally unique, so the project id is the natural qualifier.
+ARTIFACT_BUCKET="${ARTIFACT_BUCKET:-${PROJECT_ID}-call-sheets}"
 SQL_TIER="${SQL_TIER:-db-f1-micro}"
 SQL_EDITION="${SQL_EDITION:-ENTERPRISE}"
 DB_NAME="${DB_NAME:-pri}"
@@ -172,6 +174,26 @@ create_or_skip gcloud artifacts repositories create "${REPO}" \
 gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
 
 # ---------------------------------------------------------------------------
+# 2b · Somewhere for issued call sheets to live
+# ---------------------------------------------------------------------------
+#
+# A call sheet is the one artefact that leaves PRI — the document ninety people
+# are called to work by — and the `artifacts` table records that version N was
+# issued as this file. Written to container disk, the row outlived the document
+# every time Cloud Run replaced the instance, which left the audit trail
+# claiming a publication it could not produce.
+#
+# Uniform bucket-level access, no public read: a call sheet carries a unit's
+# addresses and cast call times.
+
+say "Cloud Storage bucket ${ARTIFACT_BUCKET}"
+create_or_skip gcloud storage buckets create "gs://${ARTIFACT_BUCKET}" \
+  --project "${PROJECT_ID}" \
+  --location="${REGION}" \
+  --uniform-bucket-level-access \
+  --public-access-prevention
+
+# ---------------------------------------------------------------------------
 # 3 · Cloud SQL
 # ---------------------------------------------------------------------------
 
@@ -268,6 +290,15 @@ for role in roles/cloudsql.client \
   printf '    %s\n' "${role}"
 done
 
+# Scoped to the bucket rather than the project: the runtime writes call sheets
+# and reads nothing else in Cloud Storage.
+gcloud storage buckets add-iam-policy-binding "gs://${ARTIFACT_BUCKET}" \
+  --member="serviceAccount:${RUNTIME_SA}" \
+  --role="roles/storage.objectAdmin" \
+  --project "${PROJECT_ID}" \
+  --quiet >/dev/null
+printf '    %s on gs://%s\n' "roles/storage.objectAdmin" "${ARTIFACT_BUCKET}"
+
 # ---------------------------------------------------------------------------
 # 4 · Confluent credentials
 # ---------------------------------------------------------------------------
@@ -319,6 +350,18 @@ DB_URL="postgresql+asyncpg://${DB_USER}@/${DB_NAME}?host=/cloudsql/${CONNECTION_
 #
 # "|" cannot appear in a postgres DSN.
 
+# --max-instances 1 is load-bearing, not a cost setting.
+#
+# The SSE broker in `api/stream.py` holds its subscribers in a process-local
+# dict. Cloud Run routes every request independently, so above one instance a
+# browser's event stream can be held by instance A while the recovery meant to
+# narrate into it runs on instance B. The recovery succeeds, the API returns
+# 200, and the screen the judge is watching stays empty.
+#
+# One warm instance at concurrency 40 carries this comfortably. The real fix is
+# a shared bus — Redis pub/sub, or a consumer per instance — and until that
+# exists, raising this number silently breaks the live pipeline for anyone who
+# is not the only person watching.
 say "Deploying the api service"
 gcloud run deploy pri-api \
   --project "${PROJECT_ID}" \
@@ -327,7 +370,7 @@ gcloud run deploy pri-api \
   --platform managed \
   --allow-unauthenticated \
   --min-instances 1 \
-  --max-instances 4 \
+  --max-instances 1 \
   --concurrency 40 \
   --cpu 1 --memory 1Gi \
   --cpu-boost \
@@ -336,6 +379,7 @@ gcloud run deploy pri-api \
   --set-env-vars "GIT_SHA=${GIT_SHA}" \
   --set-env-vars "PRI_ENV=production,PRI_LOG_LEVEL=INFO" \
   --set-env-vars "PRI_DEMO_PRODUCTION_ID=${DEMO_PRODUCTION_ID}" \
+  --set-env-vars "PRI_ARTIFACT_BUCKET=${ARTIFACT_BUCKET}" \
   --set-env-vars "PRI_AGENT_ENABLED=${AGENT_ENABLED}" \
   --set-env-vars "GOOGLE_GENAI_USE_VERTEXAI=true" \
   --set-env-vars "GOOGLE_GENAI_MODEL=${GEMINI_MODEL}" \

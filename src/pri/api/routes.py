@@ -42,11 +42,16 @@ from pri.api.schemas import (
 )
 from pri.api.stream import Stage, get_broker
 from pri.artifacts.call_sheet import CallSheetError, generate_call_sheet
+from pri.artifacts.store import build_store
 from pri.domain.models import DisruptionEvent
 from pri.engine.constraints.validator import validate
 from pri.engine.graph.dependency import build_graph, graph_payload, impact_of
 from pri.engine.transition import TransitionService
+from pri.paths import project_root
 from pri.persistence.serialization import state_to_snapshot
+
+#: Where call sheets land when no bucket is configured.
+_LOCAL_ARTIFACTS = project_root() / "artifacts" / "call_sheets"
 
 __all__ = ["router"]
 
@@ -405,6 +410,10 @@ async def execute(
     service = TransitionService(
         repo,
         artifact_root=Path(settings.pri_artifact_root) if settings.pri_artifact_root else None,
+        artifact_store=build_store(
+            settings.pri_artifact_bucket,
+            Path(settings.pri_artifact_root) if settings.pri_artifact_root else _LOCAL_ARTIFACTS,
+        ),
     )
     try:
         result = await service.execute(

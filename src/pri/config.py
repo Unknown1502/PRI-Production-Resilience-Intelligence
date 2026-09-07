@@ -210,6 +210,11 @@ class Settings(BaseSettings):
     # Where generated call sheets are written. Relative paths resolve against
     # the working directory; Cloud Run mounts a writable /tmp.
     pri_artifact_root: str | None = Field(default=None, alias="PRI_ARTIFACT_ROOT")
+    # A Cloud Storage bucket for issued call sheets. Unset means the local
+    # filesystem, which is right for tests and a checkout but wrong for Cloud
+    # Run: container disk does not survive the next revision, so the audit row
+    # outlived the document it pointed at.
+    pri_artifact_bucket: str = Field(default="", alias="PRI_ARTIFACT_BUCKET")
 
     # ------------------------------------------------------------------
     # Build metadata

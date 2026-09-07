@@ -65,6 +65,31 @@ def env_vars_set_for(service: str) -> set[str]:
     return names
 
 
+def max_instances_for(service: str) -> int:
+    """The `--max-instances` `deploy.sh` gives one Cloud Run service.
+
+    Read out of the script for the same reason as `env_vars_set_for`: a value
+    restated in a test can agree with itself while disagreeing with the deploy.
+    """
+    lines = _DEPLOY_SH.read_text(encoding="utf-8").splitlines()
+    for start, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped.startswith(("gcloud run deploy ", "gcloud run jobs deploy ")):
+            continue
+        if not stripped.rstrip("\\").strip().endswith(service):
+            continue
+        index = start
+        while index < len(lines):
+            found = re.search(r"--max-instances[= ]+(\d+)", lines[index])
+            if found:
+                return int(found.group(1))
+            if not lines[index].rstrip().endswith("\\"):
+                break
+            index += 1
+        raise AssertionError(f"{service} sets no --max-instances")
+    raise AssertionError(f"{service} is not deployed by deploy.sh any more")
+
+
 class TestEveryServiceCanConstructItsSettings:
     """Blocker 4 — all three containers crashed before running a line of code.
 
@@ -280,3 +305,46 @@ class TestConsumerReadiness:
             server.close()
             await server.wait_closed()
             os.environ.pop("PORT", None)
+
+
+class TestTheStreamSurvivesTheWayItIsDeployed:
+    """The in-process SSE broker and `--max-instances` are one design, not two.
+
+    `api/stream.py` keeps its subscribers in a process-local dict. Cloud Run
+    routes each request independently, so above one instance the browser's
+    event stream can be held by instance A while the recovery that is supposed
+    to narrate into it runs on instance B. Nothing errors: the recovery
+    succeeds, the API returns 200, and the screen stays blank.
+
+    That failure needs no unusual load — two people watching at once is enough,
+    which is the exact condition a demo creates. The README lists the
+    in-process broker as a limitation; this makes the deployment honour it,
+    because a comment in a shell script stops nobody.
+
+    Delete this test the day the broker is backed by a shared bus, and not
+    before.
+    """
+
+    def test_the_api_is_pinned_to_one_instance(self) -> None:
+        assert max_instances_for("pri-api") == 1, (
+            "pri-api serves an in-process SSE broker; more than one instance "
+            "silently breaks the live pipeline for concurrent viewers"
+        )
+
+    def test_the_broker_is_still_in_process(self) -> None:
+        """The reason for the pin, asserted rather than assumed.
+
+        If someone puts the broker on Redis, this fails and points at the pin
+        above — which can then be lifted deliberately.
+        """
+        source = (Path(__file__).parents[1] / "src" / "pri" / "api" / "stream.py").read_text(
+            encoding="utf-8"
+        )
+        assert "self._subscribers: dict[str, set[asyncio.Queue[str]]]" in source, (
+            "the broker's storage changed; re-check whether pri-api still has "
+            "to run as a single instance"
+        )
+
+    def test_the_consumer_is_a_single_instance_too(self) -> None:
+        """One consumer, so a partition is not read twice."""
+        assert max_instances_for("pri-consumer") == 1

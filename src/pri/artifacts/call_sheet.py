@@ -38,6 +38,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+from pri.artifacts.store import ArtifactStore, LocalArtifactStore, artifact_key
 from pri.paths import config_path, project_root
 from pri.persistence.serialization import state_to_snapshot
 
@@ -235,6 +236,7 @@ def regenerate_all(
     output_root: Path | None = None,
     logistics_path: Path | None = None,
     only_days: frozenset[date] | None = None,
+    store: ArtifactStore | None = None,
 ) -> list[GeneratedArtifact]:
     """Render and write a call sheet for every shooting day with work on it.
 
@@ -246,15 +248,28 @@ def regenerate_all(
         output_root:    Override ``artifacts/call_sheets/``.
         logistics_path: Override ``config/logistics.yaml``.
         only_days:      Restrict to these dates; ``None`` renders all of them.
+        store:          Where the sheets go. Defaults to the local filesystem
+                        under ``output_root``; production passes a
+                        :class:`~pri.artifacts.store.GcsArtifactStore` so the
+                        document outlives the container that rendered it.
 
     Outputs:
-        One :class:`GeneratedArtifact` per written file, in date order.
+        One :class:`GeneratedArtifact` per written file, in date order. ``path``
+        is whatever the store calls the artefact — a filesystem path, or a
+        ``gs://`` URI.
 
     Failure modes:
-        Raises ``OSError`` if the output directory cannot be created or written.
+        Raises ``OSError`` if a local directory cannot be created or written,
+        or the storage client's own error if an upload fails. Neither is
+        caught: an artefact that was not stored must not be recorded as issued.
     """
     _, digest = state_to_snapshot(state)
     written: list[GeneratedArtifact] = []
+    sink = (
+        store
+        if store is not None
+        else LocalArtifactStore(output_root if output_root is not None else _DEFAULT_OUTPUT_ROOT)
+    )
 
     for day in sorted(state.schedule.days, key=lambda d: d.date):
         if not day.scene_ids:
@@ -262,15 +277,17 @@ def regenerate_all(
         if only_days is not None and day.date not in only_days:
             continue
         pdf = generate_call_sheet(state, day.date, logistics_path=logistics_path)
-        target = artifact_path(state, day.date, output_root)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(pdf)
+        locator = sink.put(
+            artifact_key(state.production.id, state.version, day.date),
+            pdf,
+            content_type="application/pdf",
+        )
         written.append(
             GeneratedArtifact(
                 kind=ARTIFACT_KIND,
                 day=day.date,
                 version=state.version,
-                path=str(target),
+                path=locator,
                 digest=digest,
             )
         )

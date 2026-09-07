@@ -51,6 +51,7 @@ from pri.persistence.serialization import state_to_snapshot
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from pri.artifacts.store import ArtifactStore
     from pri.persistence.repository import PriRepository
 
 __all__ = [
@@ -209,7 +210,9 @@ class TransitionService:
                          schedule change.  ``None`` means any named approver is
                          acceptable, which is the demo posture — a real
                          deployment passes the producer list.
-        artifact_root:   Where call sheets are written.
+        artifact_root:   Where call sheets are written when no store is given.
+        artifact_store:  Where call sheets go. Defaults to the local
+                         filesystem under ``artifact_root``.
     """
 
     def __init__(
@@ -219,11 +222,13 @@ class TransitionService:
         policy: Policy | None = None,
         permitted_approvers: frozenset[str] | None = None,
         artifact_root: Path | None = None,
+        artifact_store: ArtifactStore | None = None,
     ) -> None:
         self._repo = repo
         self._policy = policy if policy is not None else load_policy()
         self._permitted = permitted_approvers
         self._artifact_root = artifact_root
+        self._artifact_store = artifact_store
 
     # ------------------------------------------------------------------
 
@@ -453,14 +458,14 @@ class TransitionService:
     def _regenerate_artifacts(self, state: ProductionState) -> list[Any]:
         """Render call sheets for the new version (step 6, before the commit).
 
-        Written to disk ahead of the transaction so that V6 has something real
-        to check.  A rolled-back transaction leaves orphaned PDFs under a
-        version directory that no state row references — harmless, and cheaper
-        than the alternative of a two-phase write.
+        Stored ahead of the transaction so that V6 has something real to
+        check.  A rolled-back transaction leaves orphaned PDFs under a version
+        prefix that no state row references — harmless, and cheaper than the
+        alternative of a two-phase write.
         """
         from pri.artifacts.call_sheet import regenerate_all
 
-        return regenerate_all(state, output_root=self._artifact_root)
+        return regenerate_all(state, output_root=self._artifact_root, store=self._artifact_store)
 
     async def _load_plan(self, session_id: str, plan_id: str) -> CandidatePlan:
         """Rebuild the stored candidate plan from its database row."""

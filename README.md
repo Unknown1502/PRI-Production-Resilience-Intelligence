@@ -237,23 +237,43 @@ Full traceability in
   Second-unit scheduling and cross-production resource contention are not
   modelled; C005 and C007 check for double-booking but nothing generates a
   multi-unit plan.
-- **The SSE broker is in-process.** A client connected to one Cloud Run instance
-  will not see a recovery driven on another. Fine for a demo where the consumer
-  calls one API service; a real deployment needs Redis pub/sub or a consumer per
-  instance. Called out in [`api/stream.py`](src/pri/api/stream.py).
+- **The SSE broker is in-process, so the API runs as a single instance.** A
+  client connected to one Cloud Run instance would not see a recovery driven on
+  another, so `pri-api` is pinned to `--max-instances 1` and the failure cannot
+  occur in this deployment. That is a real ceiling, not a fix: one instance at
+  concurrency 40 carries a demo and would not carry a studio. Lifting it needs
+  Redis pub/sub or a consumer per instance. The pin is enforced by a test
+  ([`test_cloud_run_contract.py`](tests/test_cloud_run_contract.py)) that fails
+  if the instance count is raised while the broker is still process-local,
+  because a comment in a deploy script stops nobody.
 - **Costs are a model, not an accounting integration.** The rates in
   `config/scoring.yaml` are a production's own estimates. Nothing reconciles
   against a real budget system, and the plate-relocation penalty in particular
   is a judgement call we document rather than derive.
-- **The scenario is one disruption type end to end.** All five event types
-  compute impact, but the candidate families were designed against
-  `location.blocked`. An `equipment.failed` event generates plans; whether they
-  are the plans a producer would want is untested.
-- **Call sheets are ephemeral.** They are written to container-local disk and
-  regenerated per version. Durable storage would be a GCS bucket and about
-  twenty lines.
+- **The demo narrates one disruption type; all five are now tested.** The
+  candidate families were designed against `location.blocked`, so the other
+  four were untested rather than unsupported. Each of the five now runs the
+  full pipeline — impact, generation, validation, repair, scoring — and is
+  asserted to block real scenes, return at least one plan a producer could
+  approve, and never put an invalid plan on the Pareto frontier
+  ([`test_every_event_type_recovers.py`](tests/engine/simulation/test_every_event_type_recovers.py)).
+  The scoring weights are still tuned against `location.blocked`: the plans for
+  an `equipment.failed` event are valid and ranked, and whether that ranking
+  matches a producer's instinct is a judgement we have not gathered evidence
+  for.
+- **Call sheets are durable, but nobody is served a link to one.** They now go
+  to a Cloud Storage bucket keyed `<production>/v<version>/<date>.pdf`, so the
+  `artifacts` row and the document it references survive the same deploy —
+  before, the row outlived the file and the audit trail claimed a publication
+  it could not produce. What is missing is distribution: the API re-renders a
+  sheet on request rather than issuing a signed URL to the stored one, and
+  there is no retention policy on the bucket.
 - **Approval is a name in a field.** There is no identity provider. The
-  authorization argument is recorded but not verified against anything.
+  authorization argument is recorded but not verified against anything. This is
+  the limitation we would fix first and the one we have deliberately not
+  half-built: a name typed into a box is obviously a name typed into a box,
+  whereas a login that authenticates nobody would look like access control
+  without being it.
 
 ### What we would build next
 

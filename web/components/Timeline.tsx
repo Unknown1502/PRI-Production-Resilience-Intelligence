@@ -12,6 +12,7 @@
 
 import type { Stage, StreamFrame } from "@/lib/types";
 
+import { InjectDisruption } from "./InjectDisruption";
 import { RunDisruption } from "./RunDisruption";
 import { RuleViolationCard } from "./primitives";
 
@@ -52,6 +53,9 @@ export function Timeline({ frames }: { frames: StreamFrame[] }) {
           work out what it costs to recover from it.
         </p>
         <RunDisruption />
+        <div className="w-full max-w-sm pt-2 text-left">
+          <InjectDisruption />
+        </div>
         <p className="text-2xs text-chalk-600">
           Or publish one onto the Confluent topic with{" "}
           <code className="rounded bg-board-700 px-1.5 py-0.5 text-chalk-400">

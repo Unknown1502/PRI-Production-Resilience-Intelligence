@@ -147,6 +147,18 @@ interprets and explains them.** That is enforced, not asserted.
 | The numbers the model sees are the real ones | [`test_tools.py`](tests/agent/test_tools.py) | Re-runs the planner independently and asserts every score in the tool payload matches exactly. |
 | A rejected plan really was rejected | [`validator.py`](src/pri/engine/constraints/validator.py) | `validate()` is pure — no IO, no clock, no global state. Same input, same verdict, forever. |
 | The demo cannot drift from the code | [`test_recovery_scenario.py`](tests/engine/simulation/test_recovery_scenario.py) | The six narrated assertions are tests. If the video is wrong, CI is red. |
+| The LLM cannot name a thing that does not exist | [`test_injection_compliance.py`](tests/agent/test_injection_compliance.py) | Typed disruptions pass a closed set of the production's own ids into the prompt, then check every id the model returns against live state again. An id that is not there is a clarification, never an event. |
+
+That last row is the one input PRI does not control, so it is worth being precise
+about. A judge can type a disruption in plain language and watch it run. The
+model picks one of two event types, one entity id and one board date — all from
+lists it is given — and authors nothing: not the window, not the severity, not a
+move. Passing a closed set in a prompt makes a model behave better and proves
+nothing, so the check on the way back is what makes the boundary real. Deleting
+it fails nine tests. The resulting event is published to `production.events` and
+driven by the consumer, so it travels the identical path as any other event; the
+endpoint has no branch that reaches the engine directly, and returns 503 rather
+than routing around a dead broker.
 
 If Gemini is unavailable — quota, credentials, a model that answers without
 calling a tool — the pipeline completes anyway with a templated explanation and
@@ -212,6 +224,7 @@ ongoing charge.
 | **FastAPI** | Routes plus the SSE stream that drives the console | [`api/routes.py`](src/pri/api/routes.py) |
 | **ReportLab** | Call-sheet PDFs, footer-stamped with state version and digest | [`artifacts/call_sheet.py`](src/pri/artifacts/call_sheet.py) |
 | **Cloud Storage** | Issued call sheets, keyed by production, version and day, so the audit row and the document survive together | [`artifacts/store.py`](src/pri/artifacts/store.py) |
+| **Gemini** (extraction) | Turns a typed disruption into an event by selecting from the production's own entities — never by naming a new one | [`agent/extraction.py`](src/pri/agent/extraction.py) |
 | **Next.js 15 + @xyflow/react** | The production control room | [`web/app`](web/app) |
 | **Cloud Run + Cloud SQL** | Three services, one job | [`infra/deploy.sh`](infra/deploy.sh) |
 

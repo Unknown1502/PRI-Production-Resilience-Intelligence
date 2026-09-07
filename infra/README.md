@@ -99,6 +99,41 @@ database ok, the overview returns a production, a disruption produces candidates
 including one the validator rejected, the demo reset succeeds, and a call sheet
 downloads with an intact PDF header.
 
+### Typed disruptions during the demo
+
+A judge can type a disruption in plain language instead of pressing the scripted
+button. The endpoint is closed unless a passcode is configured, and the deploy
+generates one into Secret Manager. Read it out before you present:
+
+```bash
+gcloud secrets versions access latest --secret=pri-inject-passcode
+```
+
+Paste it into the passcode field on the disruption screen; the browser remembers
+it. Then type something like *"Arun is ill and cannot work on the 10th"* or
+*"the courtyard permit fell through for Thursday"*.
+
+Two things to know before demonstrating it:
+
+Only a blocked location and an unavailable cast member are accepted. Those are
+the two disruption types with narrated scenario tests behind them. Equipment,
+weather and crew reports are refused on purpose — see the README's limitations
+section.
+
+**A refusal is the more interesting demo.** Type a place that does not exist —
+*"the lighthouse is shut"* — and PRI answers with a clarification and the
+nearest real matches rather than an event. That is the architecture's guarantee
+being visible: the model selects from the production's own entities, and every
+id it returns is checked against live state again before anything is published.
+
+The typed event goes onto `production.events` and is driven by the consumer, the
+same as any other event, so it takes a few seconds longer to appear than the
+scripted button — which posts directly. If the broker is down the endpoint
+returns 503 rather than routing around it.
+
+`Reset to base scenario` on the same panel puts the board back to version 1
+between judges.
+
 ### The go/no-go gate
 
 `verify.sh` proves the pipeline works for one caller. It does not prove it works

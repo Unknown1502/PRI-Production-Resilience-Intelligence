@@ -160,6 +160,40 @@ class TestPasswordInjection:
         )
 
 
+class TestEnvVarDelimiter:
+    """Blocker 7 — the DSN was truncated on its way into the container.
+
+    `--set-env-vars "^@^DATABASE_URL=..."` sets "@" as the separator between
+    variables. The Cloud SQL DSN contains one — `pri_user@/pri` — so gcloud
+    split the value there and the container received
+    `postgresql+asyncpg://pri_user`: no host, no database, no socket path.
+
+    asyncpg then fell back to TCP and failed with "Temporary failure in name
+    resolution", which is why this looked for two deploys like a socket
+    problem in the application rather than a truncated environment variable.
+    """
+
+    def test_the_delimiter_cannot_appear_in_the_dsn(self) -> None:
+        script = _DEPLOY_SH.read_text(encoding="utf-8")
+        db_url_line = next(line for line in script.splitlines() if line.startswith("DB_URL="))
+
+        delimiters = set(re.findall(r'--set-env-vars "\^(.)\^', script))
+        assert delimiters, "no custom delimiter found; the DSN needs one"
+
+        for delimiter in delimiters:
+            assert delimiter not in db_url_line, (
+                f"{delimiter!r} is used as the env-var delimiter and also appears "
+                f"in the DSN — gcloud will truncate DATABASE_URL there"
+            )
+
+    def test_every_database_url_assignment_uses_a_custom_delimiter(self) -> None:
+        """A bare --set-env-vars would split the DSN on a comma instead."""
+        script = _DEPLOY_SH.read_text(encoding="utf-8")
+        for line in script.splitlines():
+            if "DATABASE_URL=${DB_URL}" in line:
+                assert re.search(r'--set-env-vars "\^.\^', line), line.strip()
+
+
 class TestCloudSqlUnixSocket:
     """Blocker 6 — the DSN parsed, and then connected over TCP anyway.
 

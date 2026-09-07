@@ -307,6 +307,18 @@ build_image Dockerfile.consumer "${IMAGE_BASE}/consumer:${GIT_SHA}"
 # secret never appears in a deploy command, a revision's env vars, or a log.
 DB_URL="postgresql+asyncpg://${DB_USER}@/${DB_NAME}?host=/cloudsql/${CONNECTION_NAME}"
 
+# The ^|^ prefix on every --set-env-vars below chooses "|" as the delimiter
+# between variables, because the default is "," and this DSN could contain one.
+#
+# It must not be "@". It was, and the DSN contains one — `pri_user@/pri` — so
+# gcloud split the value there and set DATABASE_URL to
+# "postgresql+asyncpg://pri_user", with no host and no socket path. asyncpg
+# then fell back to a TCP connection and failed with
+# "Temporary failure in name resolution", an error that points at DNS and says
+# nothing about a truncated environment variable.
+#
+# "|" cannot appear in a postgres DSN.
+
 say "Deploying the api service"
 gcloud run deploy pri-api \
   --project "${PROJECT_ID}" \
@@ -329,7 +341,7 @@ gcloud run deploy pri-api \
   --set-env-vars "GOOGLE_GENAI_MODEL=${GEMINI_MODEL}" \
   --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION}" \
   --set-env-vars "CONFLUENT_BOOTSTRAP_SERVERS=${CONFLUENT_BOOTSTRAP_SERVERS}" \
-  --set-env-vars "^@^DATABASE_URL=${DB_URL}" \
+  --set-env-vars "^|^DATABASE_URL=${DB_URL}" \
   --set-secrets "DATABASE_PASSWORD=pri-db-password:latest" \
   --set-secrets "CONFLUENT_API_KEY=pri-confluent-api-key:latest" \
   --set-secrets "CONFLUENT_API_SECRET=pri-confluent-api-secret:latest" \
@@ -356,7 +368,7 @@ gcloud run jobs deploy pri-seed \
   --image "${IMAGE_BASE}/api:${GIT_SHA}" \
   --service-account "${RUNTIME_SA}" \
   --set-cloudsql-instances "${CONNECTION_NAME}" \
-  --set-env-vars "^@^DATABASE_URL=${DB_URL}" \
+  --set-env-vars "^|^DATABASE_URL=${DB_URL}" \
   --set-secrets "DATABASE_PASSWORD=pri-db-password:latest" \
   --command python \
   --args=-m,pri.persistence.bootstrap \
@@ -385,7 +397,7 @@ gcloud run deploy pri-consumer \
   --set-env-vars "GIT_SHA=${GIT_SHA},PRI_ENV=production,PRI_LOG_LEVEL=INFO" \
   --set-env-vars "PRI_API_INTERNAL_URL=${API_URL}" \
   --set-env-vars "CONFLUENT_BOOTSTRAP_SERVERS=${CONFLUENT_BOOTSTRAP_SERVERS:-}" \
-  --set-env-vars "^@^DATABASE_URL=${DB_URL}" \
+  --set-env-vars "^|^DATABASE_URL=${DB_URL}" \
   --set-secrets "DATABASE_PASSWORD=pri-db-password:latest" \
   --set-secrets "CONFLUENT_API_KEY=pri-confluent-api-key:latest" \
   --set-secrets "CONFLUENT_API_SECRET=pri-confluent-api-secret:latest"

@@ -343,22 +343,25 @@ printf '    api at %s\n' "${API_URL}"
 # 7 · Migrations and seed, as a one-shot job
 # ---------------------------------------------------------------------------
 
+# --set-cloudsql-instances, not --add-. Services accept --add-; jobs do not
+# accept it at all. The usage error that produced was swallowed by a
+# `2>/dev/null || jobs update` fallback, which then failed with "Job could not
+# be found" — an error describing the consequence rather than the cause.
+#
+# The fallback is gone as well: `jobs deploy` already creates or updates.
 say "Running migrations and seeding the demo production"
 gcloud run jobs deploy pri-seed \
   --project "${PROJECT_ID}" \
   --region "${REGION}" \
   --image "${IMAGE_BASE}/api:${GIT_SHA}" \
   --service-account "${RUNTIME_SA}" \
-  --add-cloudsql-instances "${CONNECTION_NAME}" \
+  --set-cloudsql-instances "${CONNECTION_NAME}" \
   --set-env-vars "^@^DATABASE_URL=${DB_URL}" \
   --set-secrets "DATABASE_PASSWORD=pri-db-password:latest" \
   --command python \
   --args "-m,pri.persistence.bootstrap" \
   --max-retries 1 \
-  --task-timeout 300s 2>/dev/null || \
-gcloud run jobs update pri-seed \
-  --project "${PROJECT_ID}" --region "${REGION}" \
-  --image "${IMAGE_BASE}/api:${GIT_SHA}"
+  --task-timeout 300s
 
 gcloud run jobs execute pri-seed --project "${PROJECT_ID}" --region "${REGION}" --wait
 

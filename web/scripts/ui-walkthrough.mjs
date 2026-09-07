@@ -91,8 +91,8 @@ await shot(page, "overview");
 const bodyText = await page.locator("body").innerText();
 record("overview renders a production title", /Night Train|Harbour Lights/i.test(bodyText),
   bodyText.slice(0, 60).replace(/\s+/g, " "));
-record("overview shows shooting days", /shoot days|Schedule/i.test(bodyText));
-record("no 'Loading' stuck on screen", !/Loading the production/i.test(bodyText));
+record("overview shows shooting days", /shooting days/i.test(bodyText));
+record("no 'Loading' stuck on screen", !/Reading the board/i.test(bodyText));
 record("no error banner", !/not answering|Internal Server Error/i.test(bodyText));
 
 const navLinks = await page.locator("nav a").allInnerTexts();

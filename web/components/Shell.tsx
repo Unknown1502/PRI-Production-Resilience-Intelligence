@@ -103,7 +103,7 @@ export function Shell({ children }: { children: ReactNode }) {
           onReset={refreshVersion}
         />
         <div className="flex min-h-0 flex-1">
-          <nav className="w-44 shrink-0 border-r border-ink-700 bg-ink-850 py-3">
+          <nav className="w-44 shrink-0 border-r border-board-600 bg-board-800 py-3">
             <ul className="space-y-0.5 px-2">
               {NAV.map((item) => {
                 const active =
@@ -114,8 +114,8 @@ export function Shell({ children }: { children: ReactNode }) {
                       href={item.href}
                       className={`block rounded-md px-3 py-2 text-xs transition-colors ${
                         active
-                          ? "bg-ink-700 font-medium text-chalk-100"
-                          : "text-chalk-400 hover:bg-ink-800 hover:text-chalk-200"
+                          ? "bg-board-600 font-medium text-chalk-100"
+                          : "text-chalk-400 hover:bg-board-700 hover:text-chalk-200"
                       }`}
                     >
                       {item.label}

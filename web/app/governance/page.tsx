@@ -151,7 +151,7 @@ export default function GovernancePage() {
     <div className="grid grid-cols-1 gap-4 p-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="flex flex-col gap-4">
         <Panel title="Execution sequence">
-          <ol className="divide-y divide-ink-700">
+          <ol className="divide-y divide-board-600">
             {TRANSITION_STEPS.map((step, index) => {
               const done = completed.has(step);
               const failed = failedStep === step;
@@ -161,10 +161,10 @@ export default function GovernancePage() {
                     className={`tnum mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center
                                 rounded-full border text-2xs font-bold ${
                                   failed
-                                    ? "border-alert bg-alert-wash text-alert"
+                                    ? "border-stamp bg-stamp-wash text-stamp"
                                     : done
-                                      ? "border-clear bg-clear-wash text-clear"
-                                      : "border-ink-600 bg-ink-800 text-chalk-600"
+                                      ? "border-seal bg-seal-wash text-seal"
+                                      : "border-board-500 bg-board-700 text-chalk-600"
                                 }`}
                   >
                     {index + 1}
@@ -172,7 +172,7 @@ export default function GovernancePage() {
                   <div className="min-w-0">
                     <p
                       className={`text-xs ${
-                        failed ? "text-alert" : done ? "text-chalk-100" : "text-chalk-600"
+                        failed ? "text-stamp" : done ? "text-chalk-100" : "text-chalk-600"
                       }`}
                     >
                       {STEP_LABEL[step]}
@@ -197,7 +197,7 @@ export default function GovernancePage() {
           <table className="w-full text-xs">
             <tbody>
               {POLICY_ROWS.map(([code, name, rule]) => (
-                <tr key={code} className="row-hover border-b border-ink-700 last:border-b-0">
+                <tr key={code} className="row-hover border-b border-board-600 last:border-b-0">
                   <td className="tnum w-16 px-4 py-2 text-chalk-400">{code}</td>
                   <td className="w-52 py-2 text-chalk-100">{name}</td>
                   <td className="px-4 py-2 text-chalk-600">{rule}</td>
@@ -225,7 +225,7 @@ export default function GovernancePage() {
               </label>
               <select
                 id="plan"
-                className="mt-1 w-full rounded-md border border-ink-600 bg-ink-800 px-2 py-1.5 text-xs text-chalk-100"
+                className="mt-1 w-full rounded-md border border-board-500 bg-board-700 px-2 py-1.5 text-xs text-chalk-100"
                 value={selected ?? ""}
                 onChange={(event) => setSelected(event.target.value)}
               >
@@ -241,7 +241,7 @@ export default function GovernancePage() {
             </div>
 
             {chosen?.score ? (
-              <dl className="grid grid-cols-3 gap-2 rounded-md border border-ink-600 bg-ink-800 p-2.5">
+              <dl className="grid grid-cols-3 gap-2 rounded-md border border-board-500 bg-board-700 p-2.5">
                 <Summary label="delay" value={`${chosen.score.schedule_delay_days.toFixed(2)}d`} />
                 <Summary label="cost" value={money(chosen.score.incremental_cost)} />
                 <Summary label="risk" value={chosen.score.operational_risk.toFixed(2)} />
@@ -254,7 +254,7 @@ export default function GovernancePage() {
               </label>
               <input
                 id="approver"
-                className="mt-1 w-full rounded-md border border-ink-600 bg-ink-800 px-2 py-1.5 text-xs text-chalk-100"
+                className="mt-1 w-full rounded-md border border-board-500 bg-board-700 px-2 py-1.5 text-xs text-chalk-100"
                 value={approver}
                 onChange={(event) => setApprover(event.target.value)}
               />
@@ -267,7 +267,7 @@ export default function GovernancePage() {
               <textarea
                 id="note"
                 rows={2}
-                className="mt-1 w-full rounded-md border border-ink-600 bg-ink-800 px-2 py-1.5 text-xs text-chalk-100"
+                className="mt-1 w-full rounded-md border border-board-500 bg-board-700 px-2 py-1.5 text-xs text-chalk-100"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 placeholder="Why this plan?"
@@ -303,7 +303,7 @@ export default function GovernancePage() {
             </button>
 
             {notice ? (
-              <p className={`text-2xs ${failedStep ? "text-alert" : "text-clear"}`}>{notice}</p>
+              <p className={`text-2xs ${failedStep ? "text-stamp" : "text-seal"}`}>{notice}</p>
             ) : null}
           </div>
         )}

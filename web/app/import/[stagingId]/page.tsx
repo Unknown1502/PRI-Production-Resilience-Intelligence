@@ -178,7 +178,7 @@ export default function ImportReviewPage() {
         <SettledFooter report={report} />
       ) : (
         <footer
-          className="fixed inset-x-0 bottom-0 border-t border-ink-700 bg-ink-850/95 backdrop-blur"
+          className="fixed inset-x-0 bottom-0 border-t border-board-600 bg-board-800/95 backdrop-blur"
           // The commit is irreversible in one direction — it creates version 1
           // — so the control for it is pinned and never scrolls off.
         >
@@ -190,9 +190,9 @@ export default function ImportReviewPage() {
                 value={confirmedBy}
                 onChange={(event) => setConfirmedBy(event.target.value)}
                 placeholder="your name"
-                className="w-40 rounded-md border border-ink-600 bg-ink-800 px-2 py-1 text-xs
+                className="w-40 rounded-md border border-board-500 bg-board-700 px-2 py-1 text-xs
                            normal-case tracking-normal text-chalk-100 placeholder:text-chalk-600
-                           focus:border-ink-500 focus:outline-none"
+                           focus:border-board-500 focus:outline-none"
               />
             </label>
 
@@ -203,9 +203,9 @@ export default function ImportReviewPage() {
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
                   placeholder="why are you discarding it?"
-                  className="min-w-0 flex-1 rounded-md border border-ink-600 bg-ink-800 px-2 py-1
+                  className="min-w-0 flex-1 rounded-md border border-board-500 bg-board-700 px-2 py-1
                              text-xs text-chalk-100 placeholder:text-chalk-600
-                             focus:border-ink-500 focus:outline-none"
+                             focus:border-board-500 focus:outline-none"
                 />
                 <button type="button" className="btn-stop" disabled={busy} onClick={discard}>
                   Confirm discard
@@ -255,7 +255,7 @@ export default function ImportReviewPage() {
             )}
           </div>
           {actionError ? (
-            <p className="mx-auto max-w-4xl px-6 pb-2 text-2xs text-alert" role="alert">
+            <p className="mx-auto max-w-4xl px-6 pb-2 text-2xs text-stamp" role="alert">
               {actionError}
             </p>
           ) : null}
@@ -303,8 +303,8 @@ function Verdict({ report }: { report: ImportReport }) {
 
 function Banner({ tone, children }: { tone: "alert" | "clear" | "caution"; children: React.ReactNode }) {
   const classes = {
-    alert: "border-alert-dim bg-alert-wash text-alert",
-    clear: "border-clear-dim bg-clear-wash text-clear",
+    alert: "border-stamp-dim bg-stamp-wash text-stamp",
+    clear: "border-seal-dim bg-seal-wash text-seal",
     caution: "border-caution/30 bg-caution/10 text-caution",
   }[tone];
   return (
@@ -335,7 +335,7 @@ function Tabs({
   counts: Record<TabId, number>;
 }) {
   return (
-    <div role="tablist" aria-label="Import review" className="flex gap-1 border-b border-ink-700">
+    <div role="tablist" aria-label="Import review" className="flex gap-1 border-b border-board-600">
       {(Object.keys(TAB_LABELS) as TabId[]).map((id) => {
         const selected = id === active;
         return (
@@ -356,10 +356,10 @@ function Tabs({
               <span
                 className={`tnum ml-2 rounded px-1.5 py-0.5 text-2xs ${
                   id === "errors"
-                    ? "bg-alert-wash text-alert"
+                    ? "bg-stamp-wash text-stamp"
                     : id === "health"
                       ? "bg-caution/15 text-caution"
-                      : "bg-ink-700 text-chalk-400"
+                      : "bg-board-600 text-chalk-400"
                 }`}
               >
                 {counts[id]}
@@ -417,13 +417,13 @@ function IssueList({ issues, kind }: { issues: ImportIssue[]; kind: "error" | "w
         </button>
       }
     >
-      <ul className="divide-y divide-ink-700">
+      <ul className="divide-y divide-board-600">
         {issues.map((issue, index) => (
           <li key={`${issue.code}-${issue.sheet}-${issue.row}-${index}`} className="px-4 py-3">
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={`tnum rounded px-1.5 py-0.5 text-2xs font-bold ${
-                  kind === "error" ? "bg-alert text-ink-900" : "bg-caution text-ink-900"
+                  kind === "error" ? "bg-stamp text-board-900" : "bg-caution text-board-900"
                 }`}
               >
                 {issue.code}
@@ -431,7 +431,7 @@ function IssueList({ issues, kind }: { issues: ImportIssue[]; kind: "error" | "w
               <span className="tnum text-2xs text-chalk-600">{location(issue)}</span>
               {issue.offending_value ? (
                 <span
-                  className="tnum truncate rounded bg-ink-800 px-1.5 py-0.5 text-2xs text-chalk-400"
+                  className="tnum truncate rounded bg-board-700 px-1.5 py-0.5 text-2xs text-chalk-400"
                   title={issue.offending_value}
                 >
                   {issue.offending_value}
@@ -480,13 +480,13 @@ function ScheduleHealth({ report }: { report: ImportReport }) {
 
   return (
     <Panel title="Schedule health">
-      <p className="border-b border-ink-700 px-4 py-2.5 text-2xs leading-relaxed text-chalk-400">
+      <p className="border-b border-board-600 px-4 py-2.5 text-2xs leading-relaxed text-chalk-400">
         These are breaches in the schedule as delivered, not problems with the file. They
         are imported unchanged — PRI records the production it was actually given — and
         they do not block the import.
       </p>
 
-      <div className="flex flex-wrap gap-2 border-b border-ink-700 px-4 py-3">
+      <div className="flex flex-wrap gap-2 border-b border-board-600 px-4 py-3">
         {codes.map(([code, count]) => (
           <span
             key={code}
@@ -520,7 +520,7 @@ function Preview({ report }: { report: ImportReport }) {
   const { summary } = report;
   return (
     <Panel title="Preview">
-      <dl className="divide-y divide-ink-700">
+      <dl className="divide-y divide-board-600">
         <Row label="Shooting window">
           {summary.first_shoot_date && summary.last_shoot_date
             ? `${shortDate(summary.first_shoot_date)} → ${shortDate(summary.last_shoot_date)} (${summary.shoot_span_days} days)`
@@ -535,7 +535,7 @@ function Preview({ report }: { report: ImportReport }) {
           <span className="tnum">{report.staging_id}</span>
         </Row>
       </dl>
-      <p className="border-t border-ink-700 px-4 py-2.5 text-2xs leading-relaxed text-chalk-600">
+      <p className="border-t border-board-600 px-4 py-2.5 text-2xs leading-relaxed text-chalk-600">
         The parsed workbook is held for 24 hours and then deleted. The uploaded file itself
         is never stored.
       </p>
@@ -558,7 +558,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function SettledFooter({ report }: { report: ImportReport }) {
   return (
-    <footer className="flex flex-wrap items-center gap-3 rounded-md border border-ink-700 bg-ink-850 px-4 py-3">
+    <footer className="flex flex-wrap items-center gap-3 rounded-md border border-board-600 bg-board-800 px-4 py-3">
       <span className="min-w-0 flex-1 text-2xs text-chalk-600">
         {report.status === "COMMITTED"
           ? "This import is committed. State versions are append-only, so it cannot be undone from here."

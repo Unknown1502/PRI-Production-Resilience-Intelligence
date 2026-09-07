@@ -84,6 +84,27 @@ class HealthOut(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class SceneStripOut(BaseModel):
+    """One scene, as a strip on the board.
+
+    `int_ext` and `time_of_day` are here because they are what colours a strip.
+    A production board has used the same four colours since long before any of
+    this was software — white for INT/DAY, yellow for EXT/DAY, blue for
+    INT/NIGHT, green for EXT/NIGHT — so the colour is the data, and a 1st AD
+    reads the shape of a week without reading a word.
+    """
+
+    id: str
+    number: str
+    slug: str
+    description: str
+    int_ext: Literal["INT", "EXT"]
+    time_of_day: Literal["DAY", "NIGHT", "DAWN", "DUSK"]
+    estimated_minutes: int
+    cast_count: int
+    vfx_plate: bool
+
+
 class ScheduleDayOut(BaseModel):
     """One shooting day, flattened for the schedule strip."""
 
@@ -94,9 +115,11 @@ class ScheduleDayOut(BaseModel):
     location_name: str
     unit: str
     scene_ids: list[str]
+    scenes: list[SceneStripOut]
     scene_count: int
     scheduled_minutes: int
     is_reserve: bool
+    day_kind: str
 
 
 class ScheduleOut(BaseModel):
@@ -423,11 +446,27 @@ def schedule_out(state: ProductionState) -> ScheduleOut:
                 location_name=locations.get(day.location_id, day.location_id),
                 unit=day.unit,
                 scene_ids=list(day.scene_ids),
+                scenes=[
+                    SceneStripOut(
+                        id=scene.id,
+                        number=scene.number,
+                        slug=scene.slug,
+                        description=scene.description,
+                        int_ext=scene.int_ext,
+                        time_of_day=scene.time_of_day,
+                        estimated_minutes=scene.estimated_minutes,
+                        cast_count=len(scene.cast_ids),
+                        vfx_plate=scene.vfx_plate,
+                    )
+                    for sid in day.scene_ids
+                    if (scene := scenes.get(sid)) is not None
+                ],
                 scene_count=len(day.scene_ids),
                 scheduled_minutes=sum(
                     scenes[sid].estimated_minutes for sid in day.scene_ids if sid in scenes
                 ),
                 is_reserve=day.date in reserve,
+                day_kind=day.day_kind,
             )
             for day in sorted(state.schedule.days, key=lambda d: d.date)
         ],

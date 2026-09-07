@@ -20,6 +20,19 @@ export interface Health {
   at: string;
 }
 
+/** One scene as it appears on the board. Colour comes from these two fields. */
+export interface SceneStrip {
+  id: string;
+  number: string;
+  slug: string;
+  description: string;
+  int_ext: "INT" | "EXT";
+  time_of_day: "DAY" | "NIGHT" | "DAWN" | "DUSK";
+  estimated_minutes: number;
+  cast_count: number;
+  vfx_plate: boolean;
+}
+
 export interface ScheduleDay {
   date: string;
   call_time: string;
@@ -28,9 +41,11 @@ export interface ScheduleDay {
   location_name: string;
   unit: string;
   scene_ids: string[];
+  scenes: SceneStrip[];
   scene_count: number;
   scheduled_minutes: number;
   is_reserve: boolean;
+  day_kind: string;
 }
 
 export interface Schedule {

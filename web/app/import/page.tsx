@@ -110,7 +110,7 @@ export default function ImportPage() {
           {samples.length === 0 ? (
             <EmptyState>No samples are available on this deployment.</EmptyState>
           ) : (
-            <ul className="divide-y divide-ink-700">
+            <ul className="divide-y divide-board-600">
               {samples.map((sample) => (
                 <li key={sample.name} className="flex items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
@@ -140,7 +140,7 @@ export default function ImportPage() {
         {spec === null ? (
           <EmptyState>Loading the sheet contract…</EmptyState>
         ) : (
-          <ul className="divide-y divide-ink-700">
+          <ul className="divide-y divide-board-600">
             {spec.sheets.map((sheet) => (
               <li key={sheet.name} className="px-4 py-3">
                 <div className="flex items-baseline gap-2">
@@ -169,7 +169,7 @@ export default function ImportPage() {
             ))}
           </ul>
         )}
-        <footer className="border-t border-ink-700 px-4 py-2.5 text-2xs text-chalk-600">
+        <footer className="border-t border-board-600 px-4 py-2.5 text-2xs text-chalk-600">
           A trailing <span className="text-chalk-400">?</span> marks an optional column.
           Hover a name for its format. Already imported a production?{" "}
           <Link href="/" className="text-chalk-200 underline underline-offset-2">

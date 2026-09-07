@@ -35,8 +35,8 @@ export function PlanCard({
     <article
       className={`panel flex flex-col transition-all ${
         dominated ? "opacity-55 hover:opacity-90" : ""
-      } ${selected ? "ring-1 ring-clear" : ""} ${
-        !valid ? "border-alert-dim" : pareto ? "border-clear-dim" : ""
+      } ${selected ? "ring-1 ring-seal" : ""} ${
+        !valid ? "border-stamp-dim" : pareto ? "border-seal-dim" : ""
       }`}
     >
       <header className="panel-header">
@@ -50,7 +50,7 @@ export function PlanCard({
           {recommended ? <StatusPill tone="clear">recommended</StatusPill> : null}
           {pareto ? <StatusPill tone="clear">pareto</StatusPill> : null}
           {dominated ? <StatusPill>dominated</StatusPill> : null}
-          <StatusPill tone={valid ? "clear" : "alert"} pulse={!valid}>
+          <StatusPill tone={valid ? "clear" : "alert"}>
             {valid ? "valid" : "invalid"}
           </StatusPill>
         </div>
@@ -73,7 +73,7 @@ export function PlanCard({
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-4 border-t border-ink-700 px-4 py-2.5">
+      <div className="grid grid-cols-3 gap-4 border-t border-board-600 px-4 py-2.5">
         <Figure small label="scenes" value={score?.affected_scene_count ?? "—"} />
         <Figure
           small
@@ -83,7 +83,7 @@ export function PlanCard({
         <Figure small label="downstream" value={score?.downstream_dependency_impact ?? "—"} />
       </div>
 
-      <div className="border-t border-ink-700 px-4 py-3">
+      <div className="border-t border-board-600 px-4 py-3">
         <p className="field-label mb-1.5">moves</p>
         <ol className="space-y-1">
           {candidate.moves.map((move, index) => (
@@ -96,7 +96,7 @@ export function PlanCard({
       </div>
 
       {hardViolation ? (
-        <div className="border-t border-ink-700 p-3">
+        <div className="border-t border-board-600 p-3">
           <RuleViolationCard
             code={hardViolation.code}
             message={hardViolation.message}
@@ -107,7 +107,7 @@ export function PlanCard({
       ) : null}
 
       {onSelect && valid ? (
-        <footer className="mt-auto border-t border-ink-700 px-4 py-3">
+        <footer className="mt-auto border-t border-board-600 px-4 py-3">
           <button
             type="button"
             className={selected ? "btn-go w-full justify-center" : "btn-quiet w-full justify-center"}
@@ -139,7 +139,7 @@ function Figure({
       <p className="field-label">{label}</p>
       <p
         className={`tnum ${small ? "text-xs" : "text-sm"} ${
-          tone === "alert" ? "text-alert" : "text-chalk-100"
+          tone === "alert" ? "text-stamp" : "text-chalk-100"
         }`}
       >
         {value}

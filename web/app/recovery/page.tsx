@@ -248,7 +248,7 @@ export default function RecoveryPage() {
 
         {recovery && recovery.tool_calls.length > 0 ? (
           <Panel title="Tool calls">
-            <ol className="divide-y divide-ink-700">
+            <ol className="divide-y divide-board-600">
               {recovery.tool_calls.map((call, index) => (
                 <li key={`${call.name}-${index}`} className="px-4 py-2.5">
                   <div className="flex items-baseline justify-between gap-2">
@@ -259,7 +259,7 @@ export default function RecoveryPage() {
                   </div>
                   <p className="mt-1 text-2xs text-chalk-600">{call.summary}</p>
                   {Object.keys(call.arguments).length > 0 ? (
-                    <pre className="tnum mt-1.5 overflow-x-auto rounded bg-ink-900 p-2 text-2xs text-chalk-400">
+                    <pre className="tnum mt-1.5 overflow-x-auto rounded bg-board-900 p-2 text-2xs text-chalk-400">
                       {JSON.stringify(call.arguments)}
                     </pre>
                   ) : null}

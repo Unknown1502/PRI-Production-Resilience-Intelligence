@@ -376,10 +376,10 @@ export function DropZone({
 
   const dragging = phase === "dragActive";
   const border = dragging
-    ? "border-clear bg-clear-wash"
+    ? "border-seal bg-seal-wash"
     : phase === "rejected" || phase === "failed"
-      ? "border-alert-dim bg-alert-wash"
-      : "border-ink-600 bg-ink-850 hover:border-ink-500";
+      ? "border-stamp-dim bg-stamp-wash"
+      : "border-board-500 bg-board-800 hover:border-board-500";
 
   return (
     <div className="space-y-3">
@@ -404,7 +404,7 @@ export function DropZone({
         onDrop={wholePage ? undefined : handleDrop}
         className={`flex min-h-[190px] cursor-pointer flex-col items-center justify-center gap-3
                     rounded-lg border-2 border-dashed px-6 py-8 text-center transition-colors
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-clear
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-seal
                     ${blocked ? "cursor-not-allowed opacity-60" : ""} ${border}`}
       >
         {busy ? (
@@ -449,9 +449,9 @@ export function DropZone({
           <p
             className={`text-xs leading-relaxed ${
               outcome.tone === "alert"
-                ? "text-alert"
+                ? "text-stamp"
                 : outcome.tone === "clear"
-                  ? "text-clear"
+                  ? "text-seal"
                   : "text-caution"
             }`}
           >
@@ -509,14 +509,14 @@ function Progress({
     <div className="w-full max-w-sm space-y-2">
       <p className="truncate text-sm font-medium text-chalk-100">{filename ?? "Working…"}</p>
       <div
-        className="h-1.5 overflow-hidden rounded-full bg-ink-700"
+        className="h-1.5 overflow-hidden rounded-full bg-board-600"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={indeterminate ? undefined : Math.round(progress * 100)}
       >
         <div
-          className={`h-full rounded-full bg-clear transition-[width] duration-150 ${
+          className={`h-full rounded-full bg-seal transition-[width] duration-150 ${
             indeterminate ? "animate-pulse" : ""
           }`}
           style={{ width: indeterminate ? "100%" : `${Math.round(progress * 100)}%` }}

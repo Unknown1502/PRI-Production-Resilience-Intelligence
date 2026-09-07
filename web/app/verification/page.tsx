@@ -98,14 +98,14 @@ export default function VerificationPage() {
           <div className="flex items-baseline gap-3">
             <span className="tnum text-2xl text-chalk-600">v{view.parent_version ?? "—"}</span>
             <span className="text-chalk-600">→</span>
-            <span className="tnum text-2xl font-bold text-clear">v{view.version}</span>
+            <span className="tnum text-2xl font-bold text-seal">v{view.version}</span>
           </div>
           <div>
             <p className="field-label">digest</p>
             <p className="tnum text-xs text-chalk-200">{view.digest.slice(0, 24)}…</p>
           </div>
           <div className="ml-auto">
-            <StatusPill tone={view.valid ? "clear" : "alert"} pulse={!view.valid}>
+            <StatusPill tone={view.valid ? "clear" : "alert"}>
               {view.valid ? "verified" : "verification failed"}
             </StatusPill>
           </div>
@@ -138,7 +138,7 @@ export default function VerificationPage() {
         {callSheets.length === 0 ? (
           <EmptyState>No call sheet registered for this version.</EmptyState>
         ) : (
-          <ul className="divide-y divide-ink-700">
+          <ul className="divide-y divide-board-600">
             {callSheets.map((artifact) => (
               <li key={artifact.id} className="flex items-center gap-3 px-4 py-2.5">
                 <span className="tnum text-xs text-chalk-100">
@@ -183,7 +183,7 @@ function ScheduleDiff({ before, after }: { before: Schedule; after: Schedule }) 
   return (
     <table className="w-full text-xs">
       <thead>
-        <tr className="border-b border-ink-700 text-left">
+        <tr className="border-b border-board-600 text-left">
           <th className="field-label px-4 py-2">day</th>
           <th className="field-label py-2">was</th>
           <th className="field-label py-2">now</th>
@@ -191,7 +191,7 @@ function ScheduleDiff({ before, after }: { before: Schedule; after: Schedule }) 
       </thead>
       <tbody>
         {changed.map(({ day, was }) => (
-          <tr key={day.date} className="border-b border-ink-700 bg-caution/5 last:border-b-0">
+          <tr key={day.date} className="border-b border-board-600 bg-caution/5 last:border-b-0">
             <td className="px-4 py-2.5 align-top text-chalk-100">{shortDate(day.date)}</td>
             <td className="py-2.5 align-top text-chalk-600">
               {was ? <DayLine day={was} /> : "—"}

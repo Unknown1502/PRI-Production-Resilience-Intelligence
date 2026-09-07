@@ -1,9 +1,11 @@
 /**
  * The small pieces every screen is built from.
  *
- * Two signal colours only — `alert` for impact and violations, `clear` for
- * validated and approved — and monospaced tabular numerals on every figure, so
- * a column of costs reads as a column.
+ * Two signal colours only — `alert` for a refusal, `clear` for validated and
+ * approved — and tabular numerals on every figure, so a column of costs reads
+ * as a column. Everything else is weight and spacing on the board's own
+ * palette, because a screen where six things are coloured is a screen where
+ * nothing reads as urgent.
  */
 
 import type { ReactNode } from "react";
@@ -11,26 +13,23 @@ import type { ReactNode } from "react";
 export type Tone = "neutral" | "alert" | "clear" | "caution";
 
 const TONE_CLASSES: Record<Tone, string> = {
-  neutral: "border-ink-600 bg-ink-800 text-chalk-400",
-  alert: "border-alert-dim bg-alert-wash text-alert",
-  clear: "border-clear-dim bg-clear-wash text-clear",
+  neutral: "border-board-500 bg-board-700 text-chalk-400",
+  alert: "border-stamp-dim bg-stamp-wash text-stamp",
+  clear: "border-seal-dim bg-seal-wash text-seal",
   caution: "border-caution/30 bg-caution/10 text-caution",
 };
 
 export function StatusPill({
   children,
   tone = "neutral",
-  pulse = false,
 }: {
   children: ReactNode;
   tone?: Tone;
-  pulse?: boolean;
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-2xs
-                  font-semibold uppercase tracking-[0.1em] ${TONE_CLASSES[tone]}
-                  ${pulse ? "animate-pulse-alert" : ""}`}
+      className={`inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-2xs
+                  font-medium ${TONE_CLASSES[tone]}`}
     >
       {children}
     </span>
@@ -51,11 +50,11 @@ export function MetricCell({
   hint?: string;
 }) {
   const valueTone =
-    tone === "alert" ? "text-alert" : tone === "clear" ? "text-clear" : "text-chalk-100";
+    tone === "alert" ? "text-stamp" : tone === "clear" ? "text-seal" : "text-chalk-100";
   return (
     <div className="flex flex-col gap-1">
       <span className="field-label">{label}</span>
-      <span className={`tnum text-lg leading-none ${valueTone}`}>
+      <span className={`tnum text-xl leading-none ${valueTone}`}>
         {value}
         {unit ? <span className="ml-1 text-xs text-chalk-600">{unit}</span> : null}
       </span>
@@ -118,28 +117,32 @@ export function RuleViolationCard({
   pulse?: boolean;
 }) {
   return (
-    <div
-      className={`rounded-md border border-alert-dim bg-alert-wash p-3 ${
-        pulse ? "animate-pulse-alert" : ""
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        <span className="tnum rounded bg-alert px-1.5 py-0.5 text-2xs font-bold text-ink-900">
-          {code}
-        </span>
-        <span className="text-2xs font-semibold uppercase tracking-[0.1em] text-alert">
-          constraint violated
-        </span>
-      </div>
-      <p className="mt-2 text-xs leading-relaxed text-chalk-200">{message}</p>
-      <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-1 border-t border-alert-dim/50 pt-2.5">
+    <div className="relative rounded-sm border border-stamp-dim bg-stamp-wash p-3 pr-24">
+      {/* The rule code, set as the stamp that was pressed onto the plan. It is
+          the one piece of theatre in the interface, and it is here because
+          this is the moment the whole demo turns on: software refusing a plan
+          and saying, in its own words, exactly why. */}
+      <span
+        className={`pointer-events-none absolute right-3 top-3 select-none rounded-sm border-2
+                    border-stamp px-2 py-0.5 font-condensed text-xl font-bold tracking-wide
+                    text-stamp opacity-75 ${pulse ? "animate-stamp-in" : ""}`}
+        style={{ transform: "rotate(-2deg)" }}
+        aria-hidden="true"
+      >
+        {code}
+      </span>
+
+      <p className="text-2xs text-stamp">Refused by {code}</p>
+      <p className="mt-1.5 text-xs leading-relaxed text-chalk-200">{message}</p>
+
+      <dl className="mt-3 flex gap-6 border-t border-stamp-dim/50 pt-2.5">
         <div>
           <dt className="field-label">observed</dt>
-          <dd className="tnum text-sm text-alert">{observed}</dd>
+          <dd className="tnum text-base text-stamp">{observed}</dd>
         </div>
         <div>
           <dt className="field-label">required</dt>
-          <dd className="tnum text-sm text-chalk-200">{required}</dd>
+          <dd className="tnum text-base text-chalk-200">{required}</dd>
         </div>
       </dl>
     </div>
@@ -158,13 +161,13 @@ export function CheckRow({
   detail: string;
 }) {
   return (
-    <li className="flex gap-3 border-b border-ink-700 px-4 py-3 last:border-b-0">
+    <li className="flex gap-3 border-b border-board-600 px-4 py-3 last:border-b-0">
       <span
         className={`tnum mt-0.5 flex h-6 w-8 shrink-0 items-center justify-center rounded text-2xs
                     font-bold ${
                       passed
-                        ? "bg-clear-wash text-clear"
-                        : "bg-alert-wash text-alert"
+                        ? "bg-seal-wash text-seal"
+                        : "bg-stamp-wash text-stamp"
                     }`}
       >
         {code}
@@ -173,8 +176,8 @@ export function CheckRow({
         <p className="text-xs font-medium text-chalk-100">{name.replace(/_/g, " ")}</p>
         <p className="mt-0.5 text-2xs leading-relaxed text-chalk-600">{detail}</p>
       </div>
-      <span className={`ml-auto shrink-0 text-xs ${passed ? "text-clear" : "text-alert"}`}>
-        {passed ? "PASS" : "FAIL"}
+      <span className={`ml-auto shrink-0 text-xs ${passed ? "text-seal" : "text-stamp"}`}>
+        {passed ? "Passed" : "Failed"}
       </span>
     </li>
   );

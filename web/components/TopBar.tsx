@@ -57,15 +57,15 @@ export function TopBar({
   }, [onReset]);
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-5 border-b border-ink-700 bg-ink-850 px-5">
+    <header className="flex h-14 shrink-0 items-center gap-5 border-b border-board-600 bg-board-800 px-5">
       <div className="min-w-0">
         <h1 className="truncate text-sm font-semibold text-chalk-100">{title}</h1>
         <p className="text-2xs text-chalk-600">Production Resilience Intelligence</p>
       </div>
 
-      <div className="ml-2 flex items-baseline gap-2 rounded-md border border-ink-600 bg-ink-800 px-3 py-1.5">
+      <div className="ml-2 flex items-baseline gap-2 rounded-md border border-board-500 bg-board-700 px-3 py-1.5">
         <span className="field-label">state</span>
-        <span className="tnum text-xl font-bold leading-none text-clear">
+        <span className="tnum text-xl font-bold leading-none text-seal">
           v{version ?? "—"}
         </span>
       </div>
@@ -82,7 +82,7 @@ export function TopBar({
         <StatusPill tone={CONNECTION_TONE[connection]}>
           <span
             className={`h-1.5 w-1.5 rounded-full ${
-              connection === "live" ? "bg-clear" : "bg-current"
+              connection === "live" ? "bg-seal" : "bg-current"
             }`}
           />
           {connection}

@@ -30,16 +30,16 @@ const STAGE_LABEL: Record<Stage, string> = {
 
 const STAGE_TONE: Record<Stage, string> = {
   EVENT_RECEIVED: "border-caution/40 bg-caution/5",
-  IMPACT_COMPUTED: "border-ink-600 bg-ink-800",
-  CANDIDATES_GENERATED: "border-ink-600 bg-ink-800",
-  CANDIDATE_INVALID: "border-alert-dim bg-alert-wash",
+  IMPACT_COMPUTED: "border-board-500 bg-board-700",
+  CANDIDATES_GENERATED: "border-board-500 bg-board-700",
+  CANDIDATE_INVALID: "border-stamp-dim bg-stamp-wash",
   REPLANNING: "border-caution/40 bg-caution/5",
-  CANDIDATE_VALID: "border-clear-dim bg-clear-wash",
+  CANDIDATE_VALID: "border-seal-dim bg-seal-wash",
   AWAITING_APPROVAL: "border-caution/40 bg-caution/5",
-  APPROVED: "border-clear-dim bg-clear-wash",
-  EXECUTING: "border-ink-600 bg-ink-800",
-  VERIFIED: "border-clear-dim bg-clear-wash",
-  FAILED: "border-alert-dim bg-alert-wash",
+  APPROVED: "border-seal-dim bg-seal-wash",
+  EXECUTING: "border-board-500 bg-board-700",
+  VERIFIED: "border-seal-dim bg-seal-wash",
+  FAILED: "border-stamp-dim bg-stamp-wash",
 };
 
 export function Timeline({ frames }: { frames: StreamFrame[] }) {
@@ -47,7 +47,7 @@ export function Timeline({ frames }: { frames: StreamFrame[] }) {
     return (
       <div className="px-4 py-10 text-center text-xs text-chalk-600">
         Waiting for a disruption. Publish one with{" "}
-        <code className="rounded bg-ink-800 px-1.5 py-0.5 text-chalk-400">
+        <code className="rounded bg-board-700 px-1.5 py-0.5 text-chalk-400">
           scripts/emit_disruption.py
         </code>
         , or press Run demo.
@@ -71,13 +71,13 @@ function TimelineRow({ frame }: { frame: StreamFrame }) {
   return (
     <li
       className={`animate-slide-in rounded-md border px-3 py-2.5 ${STAGE_TONE[stage]} ${
-        isRejection ? "animate-pulse-alert" : ""
+        isRejection ? "animate-pulse-stamp" : ""
       }`}
     >
       <div className="flex items-baseline justify-between gap-3">
         <span
           className={`text-2xs font-semibold uppercase tracking-[0.12em] ${
-            isRejection ? "text-alert" : "text-chalk-400"
+            isRejection ? "text-stamp" : "text-chalk-400"
           }`}
         >
           {STAGE_LABEL[stage]}
@@ -149,7 +149,7 @@ function StageDetail({ frame }: { frame: StreamFrame }) {
 
     case "CANDIDATE_VALID":
       return (
-        <p className="mt-1 text-xs text-clear">
+        <p className="mt-1 text-xs text-seal">
           Plan <span className="tnum font-semibold">{String(frame.label ?? "")}</span> generated and
           valid.
         </p>
@@ -166,7 +166,7 @@ function StageDetail({ frame }: { frame: StreamFrame }) {
 
     case "APPROVED":
       return (
-        <p className="mt-1 text-xs text-clear">
+        <p className="mt-1 text-xs text-seal">
           <span className="tnum">{String(frame.plan_id ?? "")}</span> approved by{" "}
           {String(frame.approver ?? "")}.
         </p>
@@ -183,7 +183,7 @@ function StageDetail({ frame }: { frame: StreamFrame }) {
     case "VERIFIED": {
       const checks = (frame.checks as string[]) ?? [];
       return (
-        <p className="mt-1 text-xs text-clear">
+        <p className="mt-1 text-xs text-seal">
           Committed as version <span className="tnum">{String(frame.new_version ?? "")}</span>.{" "}
           <span className="tnum">{checks.length}</span> verification checks green.
         </p>
@@ -192,7 +192,7 @@ function StageDetail({ frame }: { frame: StreamFrame }) {
 
     case "FAILED":
       return (
-        <p className="mt-1 text-xs text-alert">
+        <p className="mt-1 text-xs text-stamp">
           Stopped at <span className="tnum">{String(frame.step ?? "unknown step")}</span>:{" "}
           {String(frame.detail ?? "")}
         </p>

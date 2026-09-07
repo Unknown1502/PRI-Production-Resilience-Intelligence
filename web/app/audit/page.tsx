@@ -58,7 +58,7 @@ export default function AuditPage() {
         actions={
           <div className="flex items-center gap-2">
             <select
-              className="rounded-md border border-ink-600 bg-ink-800 px-2 py-1 text-2xs text-chalk-200"
+              className="rounded-md border border-board-500 bg-board-700 px-2 py-1 text-2xs text-chalk-200"
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
             >
@@ -82,7 +82,7 @@ export default function AuditPage() {
         ) : (
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-ink-700 text-left">
+              <tr className="border-b border-board-600 text-left">
                 <th className="field-label px-4 py-2">time</th>
                 <th className="field-label py-2">actor</th>
                 <th className="field-label py-2">action</th>
@@ -94,7 +94,7 @@ export default function AuditPage() {
               {visible.map((entry, index) => (
                 <tr
                   key={`${entry.at}-${index}`}
-                  className="row-hover border-b border-ink-700 align-top last:border-b-0"
+                  className="row-hover border-b border-board-600 align-top last:border-b-0"
                 >
                   <td className="tnum whitespace-nowrap px-4 py-2 text-chalk-600">
                     {entry.at.slice(11, 19)}

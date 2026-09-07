@@ -1,0 +1,57 @@
+PRI deploy — 2026-09-07 13:56:36 UTC
+log: /c/Users/prajw/OneDrive/Desktop/AGENTIC CINEMA MAIN/docs/evidence/google-cloud/deploy-20260907T135636Z.log
+
+[1m==> Enabling APIs[0m
+Operation "operations/acat.p2-482667750837-a3eb7241-bf11-4438-b6a0-1024998f6f54" finished successfully.
+
+[1m==> Artifact Registry repository pri[0m
+    (already exists, skipping)
+WARNING: Your config file at [C:\Users\prajw\.docker\config.json] contains these credential helper entries:
+
+{
+  "credHelpers": {
+    "us-central1-docker.pkg.dev": "gcloud"
+  }
+}
+Adding credentials for: us-central1-docker.pkg.dev
+gcloud credential helpers already registered correctly.
+
+[1m==> Cloud Storage bucket pri-production-resilience-call-sheets[0m
+    Creating gs://pri-production-resilience-call-sheets/...
+
+[1m==> Cloud SQL instance pri-db (ENTERPRISE, db-f1-micro)[0m
+    (already exists, skipping)
+    (already exists, skipping)
+
+[1m==> Database password in Secret Manager[0m
+    pri-db-password already present
+
+[1m==> Database user pri_user[0m
+    pri_user already exists
+
+[1m==> Runtime service account[0m
+    (already exists, skipping)
+Updated IAM policy for project [pri-production-resilience].
+    roles/cloudsql.client
+Updated IAM policy for project [pri-production-resilience].
+    roles/secretmanager.secretAccessor
+Updated IAM policy for project [pri-production-resilience].
+    roles/aiplatform.user
+Updated IAM policy for project [pri-production-resilience].
+    roles/logging.logWriter
+    roles/storage.objectAdmin on gs://pri-production-resilience-call-sheets
+
+[1m==> Confluent credentials in Secret Manager[0m
+    pri-confluent-api-key already present
+    pri-confluent-api-secret already present
+    pri-api-key already present
+
+[1m==> Building api and consumer images (ec06a15)[0m
+Creating temporary archive of 256 file(s) totalling 3.5 MiB before compression.
+Some files were not included in the source upload.
+
+Check the gcloud log [C:\Users\prajw\AppData\Roaming\gcloud\logs\2026.09.07\19.28.20.003484.log] to see which files and the contents of the
+default gcloudignore file used (see `$ gcloud topic gcloudignore` to learn
+more).
+
+Uploading tarball of [.] to [gs://pri-production-resilience_cloudbuild/source/1788789500.571569-16cbbdeb16eb427b8e7a0d921f0fb8e8.tgz]

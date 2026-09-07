@@ -211,6 +211,7 @@ ongoing charge.
 | **NetworkX** | Dependency graph and blast-radius computation | [`engine/graph/dependency.py`](src/pri/engine/graph/dependency.py) |
 | **FastAPI** | Routes plus the SSE stream that drives the console | [`api/routes.py`](src/pri/api/routes.py) |
 | **ReportLab** | Call-sheet PDFs, footer-stamped with state version and digest | [`artifacts/call_sheet.py`](src/pri/artifacts/call_sheet.py) |
+| **Cloud Storage** | Issued call sheets, keyed by production, version and day, so the audit row and the document survive together | [`artifacts/store.py`](src/pri/artifacts/store.py) |
 | **Next.js 15 + @xyflow/react** | The production control room | [`web/app`](web/app) |
 | **Cloud Run + Cloud SQL** | Three services, one job | [`infra/deploy.sh`](infra/deploy.sh) |
 

@@ -362,6 +362,21 @@ DB_URL="postgresql+asyncpg://${DB_USER}@/${DB_NAME}?host=/cloudsql/${CONNECTION_
 # a shared bus — Redis pub/sub, or a consumer per instance — and until that
 # exists, raising this number silently breaks the live pipeline for anyone who
 # is not the only person watching.
+#
+# CPU allocation is left at the default (allocated during request processing),
+# deliberately. The SSE push is entirely request-scoped at both ends: the
+# stream response in `api/routes.py` IS the long-lived request — its generator
+# holds the connection open, waking every 15s to write a keep-alive — and every
+# `broker.publish()` happens inside an awaited handler, since `/recover`,
+# `/approve` and `/execute` all run their pipeline inline rather than handing
+# it to a background task. The broker itself (`api/stream.py`) is synchronous
+# and starts nothing. So there is no moment when a frame needs to move while no
+# request is in flight, and --no-cpu-throttling would buy nothing.
+#
+# The one piece of out-of-request work in the API is the Kafka bridge's
+# delivery-callback poll and connectivity probe (`api/kafka_bridge.py`), which
+# are `asyncio.create_task`. Those are not on the SSE path: a throttled gap
+# delays a `last_delivery` field in /health, not a stage in the timeline.
 say "Deploying the api service"
 gcloud run deploy pri-api \
   --project "${PROJECT_ID}" \

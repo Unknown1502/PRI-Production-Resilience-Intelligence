@@ -240,13 +240,34 @@ Full traceability in
   multi-unit plan.
 - **The SSE broker is in-process, so the API runs as a single instance.** A
   client connected to one Cloud Run instance would not see a recovery driven on
-  another, so `pri-api` is pinned to `--max-instances 1` and the failure cannot
-  occur in this deployment. That is a real ceiling, not a fix: one instance at
-  concurrency 40 carries a demo and would not carry a studio. Lifting it needs
-  Redis pub/sub or a consumer per instance. The pin is enforced by a test
-  ([`test_cloud_run_contract.py`](tests/test_cloud_run_contract.py)) that fails
-  if the instance count is raised while the broker is still process-local,
-  because a comment in a deploy script stops nobody.
+  another. Two judges opening the URL at once is enough to trigger it, and
+  nothing errors when it happens: the recovery succeeds, the API returns 200,
+  and the second screen stays blank. So `pri-api` is pinned to
+  [`--min-instances 1 --max-instances 1`](infra/deploy.sh#L387-L388), which
+  makes the assumption explicit instead of accidental — the failure cannot
+  occur in this deployment.
+
+  Mitigated, not solved, and the distinction matters: one instance at
+  concurrency 40 carries a demo and would not carry a studio. The documented
+  production path is Redis pub/sub fan-out, or a Confluent consumer per
+  instance, and neither is built.
+
+  Two things hold the pin in place. A test
+  ([`test_cloud_run_contract.py`](tests/test_cloud_run_contract.py)) fails if
+  the instance count is raised while the broker is still process-local, because
+  a comment in a deploy script stops nobody. And
+  [`scripts/verify_live_demo.py`](scripts/verify_live_demo.py) proves it end to
+  end against the live URL: two independent SSE connections, one disruption,
+  and an assertion that *both* saw all ten pipeline stages in order. Two
+  viewers seeing different streams is the symptom of a split broker, and that
+  is the one thing `verify.sh` cannot catch, because it only ever connects
+  once.
+
+  CPU allocation is left at Cloud Run's default on purpose. The SSE push is
+  request-scoped at both ends — the stream response is itself the long-lived
+  request, and every publish happens inside an awaited handler — so there is no
+  moment when a frame must move while no request is in flight, and
+  `--no-cpu-throttling` would buy nothing.
 - **Costs are a model, not an accounting integration.** The rates in
   `config/scoring.yaml` are a production's own estimates. Nothing reconciles
   against a real budget system, and the plate-relocation penalty in particular

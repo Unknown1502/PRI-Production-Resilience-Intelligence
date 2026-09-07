@@ -99,6 +99,29 @@ database ok, the overview returns a production, a disruption produces candidates
 including one the validator rejected, the demo reset succeeds, and a call sheet
 downloads with an intact PDF header.
 
+### The go/no-go gate
+
+`verify.sh` proves the pipeline works for one caller. It does not prove it works
+for two at once, which is the thing the deployment is actually pinned for. Run
+this last, immediately before the judging window:
+
+```bash
+WEB="$(gcloud run services describe pri-web --region us-central1 --format='value(status.url)')"
+PRI_API_KEY=... python scripts/verify_live_demo.py "$WEB"
+```
+
+It opens two independent SSE connections, drives one disruption through ingest,
+recovery, approval and execution, and asserts that *both* connections saw all
+ten pipeline stages in the right order — then fetches the resulting call sheet
+on a third connection that shares nothing with either. Two viewers seeing
+different streams means `pri-api` is serving more than one instance and the
+in-process broker has split; the failure message says so.
+
+It takes either the web URL or the API URL. It resets to version 1 at the start,
+because the invalid-candidate stages need a clean board, and again at the end,
+because it commits a version and the demo has to start clean. Exit 0 prints
+`GO`; anything else prints `NO-GO` and names the assertion that broke.
+
 `kafka: degraded` is a pass. PRI works without the event fabric by design, and
 only a database failure returns 503 — a `/health` that 503s on a broker problem
 would make Cloud Run cycle an instance that is serving perfectly well.

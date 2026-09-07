@@ -348,3 +348,33 @@ class TestTheStreamSurvivesTheWayItIsDeployed:
     def test_the_consumer_is_a_single_instance_too(self) -> None:
         """One consumer, so a partition is not read twice."""
         assert max_instances_for("pri-consumer") == 1
+
+
+class TestTheConsumerCanActuallyCallTheApi:
+    """The Kafka path was broken in the deployment, and nothing noticed.
+
+    `ApiRecoveryInvoker` sends `X-API-Key: settings.pri_api_key` and `/recover`
+    is a guarded route, but the consumer's deploy never gave it `PRI_API_KEY`.
+    So every disruption arriving over Confluent was consumed, decoded, and then
+    failed with 401 — the one path that is supposed to prove the event fabric
+    drives real work.
+
+    It stayed hidden because every other route to `/recover` goes through the
+    Next.js proxy, which injects the key server-side: the demo button, the
+    browser suites and `verify.sh` all worked. It surfaced only when a typed
+    disruption was published to the topic and nothing came back.
+    """
+
+    def test_the_consumer_is_given_the_api_key(self) -> None:
+        assert "PRI_API_KEY" in env_vars_set_for("pri-consumer"), (
+            "pri-consumer calls the guarded /recover route; without PRI_API_KEY "
+            "every Kafka-delivered disruption dies with 401"
+        )
+
+    def test_the_invoker_still_sends_it(self) -> None:
+        """The other half. A key it never puts in a header is not a key."""
+        source = (Path(__file__).parents[1] / "src" / "pri" / "events" / "consumer.py").read_text(
+            encoding="utf-8"
+        )
+        assert "X-API-Key" in source
+        assert "settings.pri_api_key" in source

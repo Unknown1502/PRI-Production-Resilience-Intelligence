@@ -488,7 +488,8 @@ gcloud run deploy pri-consumer \
   --set-env-vars "^|^DATABASE_URL=${DB_URL}" \
   --set-secrets "DATABASE_PASSWORD=pri-db-password:latest" \
   --set-secrets "CONFLUENT_API_KEY=pri-confluent-api-key:latest" \
-  --set-secrets "CONFLUENT_API_SECRET=pri-confluent-api-secret:latest"
+  --set-secrets "CONFLUENT_API_SECRET=pri-confluent-api-secret:latest" \
+  --set-secrets "PRI_API_KEY=pri-api-key:latest"
 
 # ---------------------------------------------------------------------------
 # 9 · Web console

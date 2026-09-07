@@ -44,7 +44,7 @@ for (const theme of ["dark", "light"]) {
 
   await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
   await page.evaluate((t) => {
-    localStorage.setItem("pri-theme", t === "dark" ? "board" : "callsheet");
+    localStorage.setItem("pri-theme", t);
   }, theme);
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(2500);
@@ -127,7 +127,7 @@ console.log("\nStrip colours are theme-independent");
 const stripColours = {};
 for (const theme of ["dark", "light"]) {
   await page.evaluate((t) => {
-    localStorage.setItem("pri-theme", t === "dark" ? "board" : "callsheet");
+    localStorage.setItem("pri-theme", t);
   }, theme);
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.waitForTimeout(2000);

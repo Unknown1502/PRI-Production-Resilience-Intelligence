@@ -51,8 +51,8 @@ const NO_FLASH = `
 (function () {
   try {
     var stored = localStorage.getItem('pri-theme');
-    var dark = stored === 'board' ||
-      (stored !== 'callsheet' &&
+    var dark = stored === 'dark' ||
+      (stored !== 'light' &&
        window.matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   } catch (e) {

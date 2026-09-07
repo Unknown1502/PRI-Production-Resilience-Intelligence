@@ -359,7 +359,7 @@ gcloud run jobs deploy pri-seed \
   --set-env-vars "^@^DATABASE_URL=${DB_URL}" \
   --set-secrets "DATABASE_PASSWORD=pri-db-password:latest" \
   --command python \
-  --args "-m,pri.persistence.bootstrap" \
+  --args=-m,pri.persistence.bootstrap \
   --max-retries 1 \
   --task-timeout 300s
 

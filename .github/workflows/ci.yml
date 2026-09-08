@@ -112,11 +112,49 @@ jobs:
       - name: No non-Google AI SDK anywhere in the source
         # The contest rules prohibit all non-Google AI tooling. This is cheaper
         # to enforce in CI than to discover during judging.
+        #
+        # This step matched any occurrence of a forbidden name on any line,
+        # which meant `src/pri/agent/__init__.py` failed it — that file's
+        # docstring *states* the package uses no LangChain, OpenAI or
+        # Anthropic, and saying so tripped the scanner. It has failed on every
+        # commit since the first one, so the job has never been green and its
+        # signal was worth nothing: a real violation would have looked exactly
+        # like the noise everyone had learned to ignore.
+        #
+        # It now matches import syntax instead of prose, and the package list
+        # is the same one `tests/agent/test_compliance.py` enforces by AST —
+        # which is wider than the list this step used to carry. Dynamic imports
+        # are matched too, so moving a violation behind `import_module` does
+        # not slip past. Python here is belt-and-braces: the AST test in the
+        # backend job is the authoritative check for `src/`, and it cannot be
+        # fooled by a comment in either direction. Nothing else covers `web/`.
         run: |
           set -e
-          pattern='langchain|langgraph|crewai|autogen|^import openai|from openai|anthropic|boto3.*bedrock|azure\.ai'
-          if grep -rniE "$pattern" src/ web/lib web/app web/components 2>/dev/null; then
-            echo "::error::A forbidden AI SDK reference was found in the source tree."
+          pkgs='langchain|langchain_core|langchain_community|langgraph|crewai|autogen|pyautogen|openai|anthropic|cohere|mistralai|ollama|llama_index|haystack|semantic_kernel|transformers|boto3|botocore'
+          ts_pkgs='langchain|langgraph|crewai|autogen|openai|anthropic|cohere|mistralai|ollama|@anthropic-ai/|@langchain/|@aws-sdk/client-bedrock|@azure/ai'
+          found=0
+
+          # A Python import statement, not a sentence that names the library.
+          if grep -rnE "^[[:space:]]*(import|from)[[:space:]]+($pkgs)([.[:space:]]|\$)" \
+               --include='*.py' src/; then
+            found=1
+          fi
+
+          # The same thing hidden behind a runtime import.
+          if grep -rnE "(import_module|__import__)\([[:space:]]*['\"]($pkgs)" \
+               --include='*.py' src/; then
+            found=1
+          fi
+
+          # An ES import or require of a forbidden package in the console.
+          if grep -rnE "(from|require\()[[:space:]]*['\"]($ts_pkgs)" \
+               --include='*.ts' --include='*.tsx' --include='*.js' \
+               web/lib web/app web/components; then
+            found=1
+          fi
+
+          if [ "$found" -ne 0 ]; then
+            echo "::error::A forbidden AI SDK is imported in the source tree."
             exit 1
           fi
           echo "Clean: google-adk and google-genai only."

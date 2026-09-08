@@ -47,6 +47,15 @@ dev = [
     "mypy>=1.10",
     "types-python-dateutil",
     "types-PyYAML>=6.0",
+    # The importer reads workbooks with openpyxl and parses XML with
+    # defusedxml. Both were being type-checked against stubs that happened to
+    # be present in a local uv environment and were never declared here, so
+    # `mypy src/pri` passed on a developer machine and failed in CI on every
+    # commit since the repository was created. Declared, not silenced: an
+    # ignore_missing_imports override would have turned seven real errors into
+    # seven unchecked modules.
+    "types-defusedxml",
+    "types-openpyxl",
 ]
 
 [tool.hatch.build.targets.wheel]

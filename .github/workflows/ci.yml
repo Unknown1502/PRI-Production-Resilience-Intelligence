@@ -162,17 +162,30 @@ jobs:
       # Was three greps for the header, which passed for months against a
       # LICENSE whose body had been reworded in four places — and then printed
       # that the file was stock. tests/test_license.py hashes it instead.
-      - name: Apache-2.0 licence is present and unmodified
+      #
+      # The copyright holder is named on the appendix line Apache ships as
+      # "Copyright [yyyy] [name of copyright owner]". That line sits after END
+      # OF TERMS AND CONDITIONS, inside the boilerplate the appendix tells you
+      # to copy into your own files, so filling it in changes no term — but it
+      # does change the bytes. So that one line is put back to the template
+      # before hashing. Reword a definition, drop a section, or edit anything
+      # else, and this still fails.
+      - name: Apache-2.0 licence body is unmodified
         run: |
           test -f LICENSE
           expected=cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
-          actual=$(tr -d '\r' < LICENSE | sha256sum | cut -d' ' -f1)
+          actual=$(tr -d '\r' < LICENSE \
+            | sed '0,/^   Copyright /s|^   Copyright .*|   Copyright [yyyy] [name of copyright owner]|' \
+            | sha256sum | cut -d' ' -f1)
           if [ "$actual" != "$expected" ]; then
-            echo "LICENSE is not the stock Apache 2.0 text."
+            echo "The LICENSE body differs from stock Apache 2.0."
             echo "  expected $expected"
             echo "  actual   $actual"
-            echo "Replace it with https://www.apache.org/licenses/LICENSE-2.0.txt verbatim."
+            echo "Only the appendix copyright line may carry a name. Restore the rest"
+            echo "from https://www.apache.org/licenses/LICENSE-2.0.txt verbatim."
             echo "A reworded licence is undetectable to GitHub, which reports NOASSERTION."
             exit 1
           fi
-          echo "LICENSE is stock Apache-2.0."
+          grep -q '^   Copyright [0-9]\{4\} ' LICENSE || {
+            echo "The appendix copyright line names no holder."; exit 1; }
+          echo "LICENSE body is stock Apache-2.0, copyright asserted."

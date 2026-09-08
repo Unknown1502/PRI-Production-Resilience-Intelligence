@@ -125,10 +125,18 @@ visible failure is what makes the valid options believable.
 
 ## What's next
 
-Second-unit scheduling. A budget integration so `incremental_cost` reconciles
-against actuals. Weather forecasts instead of a saturation constant. And a
-learned prior over which family a producer actually accepts — the one place a
-model genuinely should be doing the work.
+Second-unit scheduling — C005 and C007 already refuse to double-book, but no
+strategy family generates a plan that uses a second unit, so the rules guard a
+shape the planner cannot produce. A budget integration so `incremental_cost`
+reconciles against actuals. The three disruption types that produce valid plans
+nobody has checked for usefulness, which is why the typed-input endpoint
+refuses them. Redis behind the stream broker, so the single-instance pin can be
+lifted. An identity provider, so the fourth of seven guards starts meaning
+something. And call sheets that actually reach the crew whose day changed.
+
+Each of those names the file it would change in
+[docs/future.md](../future.md), along with what we would **not** build: a
+chatbot that answers "what should we do?", and a model that authors moves.
 
 And another domain, because the engine is not really about film. A dependency
 graph of committed work, a disruption, hard constraints, a cost model and an

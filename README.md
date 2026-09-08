@@ -375,11 +375,36 @@ Full traceability in
 
 ### What we would build next
 
-Second-unit scheduling; a real cost integration so `incremental_cost` reconciles
-against the actual budget; weather forecast ingestion so `ext_weather_exposure`
-uses a forecast rather than a saturation constant; and a learned prior over
-which strategy family a given producer actually accepts, so the recommendation
-adapts to the person reading it.
+Seven pieces of work, each naming the file it changes and what would have to be
+true for it to be finished — **[docs/future.md](docs/future.md)**. In the order
+a production would hit them:
+
+1. **A second unit.** C005 and C007 already refuse to double-book, but no
+   strategy family generates a plan that uses a second unit, so the rules guard
+   a plan shape the planner cannot produce.
+2. **Costs that reconcile.** The rates in `config/scoring.yaml` are a
+   production's own estimates and nothing checks them against what was spent.
+3. **The remaining three disruption types.** `equipment.failed`,
+   `weather.changed` and `crew.unavailable` produce valid scored plans nobody
+   has checked for usefulness — which is why the injection endpoint refuses
+   them.
+4. **Horizontal scale.** Redis pub/sub behind the same `StreamBroker`
+   interface, so the single-instance pin can be lifted and its contract test
+   deleted on purpose.
+5. **An approver who is actually a person.** The fourth of seven guards checks
+   a name against a list; nothing establishes that the person typing it is who
+   they say they are.
+6. **Call sheets that reach the crew.** They are durable now, in a bucket. What
+   is missing is signed URLs, a retention policy, and delivery to the people
+   whose day changed.
+7. **Another domain.** Swap the constraint pack, the PDF renderer and the
+   importer schema — the three film-specific pieces — and see what breaks.
+   Field service dispatch is the cheapest honest test of the generalisation
+   claim above.
+
+That page also records what we would **not** build, and why: a chatbot that
+answers "what should we do?", a model that authors moves, and the watsonx A2A
+integration that was written, timeboxed and deliberately left unbuilt.
 
 ---
 

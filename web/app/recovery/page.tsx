@@ -16,6 +16,7 @@ import { lastFrame } from "@/lib/stream";
 import type { Candidate, ImpactReport, Recovery } from "@/lib/types";
 
 import { PlanCard } from "@/components/PlanCard";
+import { RunDisruption } from "@/components/RunDisruption";
 import { useShell } from "@/components/Shell";
 import { Timeline } from "@/components/Timeline";
 import { EmptyState, Panel, StatusPill } from "@/components/primitives";
@@ -187,8 +188,12 @@ export default function RecoveryPage() {
 
         {recovery === null ? (
           <Panel title="Candidates">
-            <EmptyState>
-              No recovery run yet. Publish a disruption and the candidates appear here.
+            <EmptyState action={<RunDisruption />}>
+              Nothing has gone wrong yet. When a disruption lands, the planner
+              generates candidate plans from four strategy families, validates
+              each against every constraint rule, and repairs the ones that
+              fail. They appear here with their delay, cost and risk — including
+              the ones that were refused, and the rule that refused them.
             </EmptyState>
           </Panel>
         ) : (
@@ -234,7 +239,10 @@ export default function RecoveryPage() {
           }
         >
           {recovery === null ? (
-            <EmptyState>Nothing to explain yet.</EmptyState>
+            <EmptyState>
+              Gemini writes the producer-facing explanation once there are plans
+              to compare. The numbers it quotes are computed before it is asked.
+            </EmptyState>
           ) : (
             <div className="space-y-3 px-4 py-3">
               {recovery.explanation.split("\n\n").map((paragraph, index) => (

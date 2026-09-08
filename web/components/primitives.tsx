@@ -87,11 +87,70 @@ export function Panel({
   );
 }
 
-export function EmptyState({ children }: { children: ReactNode }) {
+/**
+ * An empty screen that explains and offers, rather than reporting absence.
+ *
+ * Four of the seven routes opened blank, and a judge who explores before
+ * pressing anything concludes the thing is broken. "Nothing logged yet." is
+ * accurate and tells them neither what belongs here nor how to make it appear.
+ *
+ * `action` is for the control that fills the screen — in practice
+ * `<RunDisruption />`, so the pipeline can be started from wherever someone
+ * happens to be standing. `preview` is for showing the shape of what is
+ * coming: the six checks by name, the ledger's own columns. A preview must be
+ * legible as not-yet-real, which is the caller's job — see the callers.
+ */
+export function EmptyState({
+  children,
+  action,
+  preview,
+}: {
+  children: ReactNode;
+  action?: ReactNode;
+  preview?: ReactNode;
+}) {
   return (
-    <div className="flex min-h-[120px] items-center justify-center px-6 py-8 text-center text-xs text-chalk-600">
-      {children}
+    <div className="flex flex-col">
+      <div className="flex min-h-[120px] flex-col items-center justify-center gap-4 px-6 py-8 text-center text-xs text-chalk-600">
+        <p className="max-w-md leading-relaxed">{children}</p>
+        {action}
+      </div>
+      {preview}
     </div>
+  );
+}
+
+/**
+ * One check, named but not yet run.
+ *
+ * The counterpart of `CheckRow`, in the same shape so the panel does not jump
+ * when the real results replace it. Deliberately dimmed and labelled
+ * "not run" — a placeholder that could be mistaken for a result would be worse
+ * than the blank panel it replaces.
+ */
+export function PendingCheckRow({
+  code,
+  name,
+  detail,
+}: {
+  code: string;
+  name: string;
+  detail: string;
+}) {
+  return (
+    <li className="flex gap-3 border-b border-board-600 px-4 py-3 opacity-55 last:border-b-0">
+      <span
+        className="tnum mt-0.5 flex h-6 w-8 shrink-0 items-center justify-center rounded border
+                   border-board-500 bg-board-700 text-2xs font-bold text-chalk-600"
+      >
+        {code}
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-chalk-400">{name}</p>
+        <p className="mt-0.5 text-2xs leading-relaxed text-chalk-600">{detail}</p>
+      </div>
+      <span className="ml-auto shrink-0 text-xs text-chalk-600">Not run</span>
+    </li>
   );
 }
 

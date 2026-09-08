@@ -15,7 +15,55 @@ import { PRODUCTION_ID, api, clock, shortDate } from "@/lib/api";
 import type { Schedule, ScheduleDay, VerificationView } from "@/lib/types";
 
 import { useShell } from "@/components/Shell";
-import { CheckRow, EmptyState, Panel, StatusPill } from "@/components/primitives";
+import { RunDisruption } from "@/components/RunDisruption";
+import {
+  CheckRow,
+  EmptyState,
+  Panel,
+  PendingCheckRow,
+  StatusPill,
+} from "@/components/primitives";
+
+/**
+ * The six checks, named before they run.
+ *
+ * Wording follows `engine/verification/verify.py` so the contract on screen is
+ * the contract in the code. Showing it before execution is more convincing
+ * than a blank panel: a judge can read what the system is about to hold itself
+ * to, then watch it do so.
+ */
+const PENDING_CHECKS = [
+  {
+    code: "V1",
+    name: "No hard violations",
+    detail: "Zero HARD constraint violations in the committed state.",
+  },
+  {
+    code: "V2",
+    name: "Scene set preserved",
+    detail: "No scene silently dropped, duplicated or invented.",
+  },
+  {
+    code: "V3",
+    name: "Version chain intact",
+    detail: "The new version points at its parent and its digest recomputes.",
+  },
+  {
+    code: "V4",
+    name: "Moves landed",
+    detail: "Every scene the approved plan moved is where the plan said it would be.",
+  },
+  {
+    code: "V5",
+    name: "Prerequisite order",
+    detail: "Every prerequisite still falls strictly before the scene that needs it.",
+  },
+  {
+    code: "V6",
+    name: "Artifacts regenerated",
+    detail: "A call sheet exists for the new version of every affected day.",
+  },
+];
 
 export default function VerificationPage() {
   const { frames, version } = useShell();
@@ -60,9 +108,20 @@ export default function VerificationPage() {
     return (
       <div className="p-6">
         <Panel title="Verification">
-          <EmptyState>
+          <EmptyState
+            action={<RunDisruption />}
+            preview={
+              <ul className="border-t border-board-600">
+                {PENDING_CHECKS.map((check) => (
+                  <PendingCheckRow key={check.code} {...check} />
+                ))}
+              </ul>
+            }
+          >
             Nothing has been executed yet. Version 1 is the seeded baseline — the
-            six checks describe a transition, and there has not been one.
+            six checks describe a transition, and there has not been one. They run
+            against the committed state after a plan executes; here is what each
+            one will assert.
           </EmptyState>
         </Panel>
       </div>

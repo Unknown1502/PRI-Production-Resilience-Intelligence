@@ -14,7 +14,49 @@ import { PRODUCTION_ID, api } from "@/lib/api";
 import type { AuditEntry } from "@/lib/types";
 
 import { useShell } from "@/components/Shell";
+import { RunDisruption } from "@/components/RunDisruption";
 import { EmptyState, Panel, StatusPill } from "@/components/primitives";
+
+/**
+ * The ledger's own columns, with one row showing the shape of an entry.
+ *
+ * Marked "example" in its own column and dimmed, because a placeholder that
+ * could be read as a real audit record would be far worse than the blank panel
+ * it replaces — this is the screen whose entire value is that it is truthful.
+ */
+function LedgerShape() {
+  return (
+    <div className="border-t border-board-600">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b border-board-600 text-left">
+            <th className="field-label px-4 py-2">time</th>
+            <th className="field-label py-2">actor</th>
+            <th className="field-label py-2">action</th>
+            <th className="field-label py-2">subject</th>
+            <th className="field-label px-4 py-2">detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-board-600 align-top opacity-50 last:border-b-0">
+            <td className="tnum whitespace-nowrap px-4 py-2 text-chalk-600">--:--:--</td>
+            <td className="whitespace-nowrap py-2 text-chalk-600">engine</td>
+            <td className="py-2">
+              <StatusPill>example</StatusPill>
+            </td>
+            <td className="tnum py-2 text-chalk-600">plan-B</td>
+            <td className="px-4 py-2 text-2xs text-chalk-600">
+              candidate_rejected — C001 crew_turnaround, observed 9.0h, required &gt;= 10.0h
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="px-4 py-2 text-2xs text-chalk-600">
+        An example of the shape only. No entry above was recorded.
+      </p>
+    </div>
+  );
+}
 
 function tone(action: string): "clear" | "alert" | "caution" | "neutral" {
   if (action.endsWith("rejected") || action.includes("human_review")) return "alert";
@@ -78,7 +120,12 @@ export default function AuditPage() {
         {error !== null ? (
           <EmptyState>{error}</EmptyState>
         ) : visible.length === 0 ? (
-          <EmptyState>Nothing logged yet.</EmptyState>
+          <EmptyState action={<RunDisruption />} preview={<LedgerShape />}>
+            The ledger is append-only and written by the engine, not by this
+            screen: every event received, every plan refused with the rule that
+            refused it, every approval and every committed version lands here.
+            Nothing has happened to this production yet.
+          </EmptyState>
         ) : (
           <table className="w-full text-xs">
             <thead>

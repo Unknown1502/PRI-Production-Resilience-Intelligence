@@ -1,0 +1,31 @@
+PRI — Production Resilience Intelligence
+Copyright 2026 Prajwal Sutar
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+---
+
+This file is where the copyright is asserted, not LICENSE.
+
+LICENSE holds the stock, unmodified Apache 2.0 text. The bracketed
+"Copyright [yyyy] [name of copyright owner]" near the end of it belongs to the
+APPENDIX — a template showing how to write a notice, not a blank to fill in.
+Editing the licence body is how this repository previously ended up with text
+that GitHub could no longer recognise as Apache 2.0, and CI now hashes the file
+against the canonical text to stop that happening again.
+
+Section 4(d) of the License provides for exactly this file, and requires anyone
+distributing derivative works to carry the attribution above.
+
+Portions of this work were generated with IBM Bob from the prompt pack in
+ibm/bob/prompts/, with a build artifact per session in ibm/bob/artifacts/.

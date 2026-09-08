@@ -410,4 +410,10 @@ integration that was written, timeboxed and deliberately left unbuilt.
 
 ## Licence
 
-Apache 2.0 — see [LICENSE](LICENSE).
+Copyright 2026 Prajwal Sutar. Apache 2.0 — see [LICENSE](LICENSE), with the
+copyright asserted in [NOTICE](NOTICE) as section 4(d) provides for.
+
+`LICENSE` is the stock, unmodified Apache 2.0 text and CI hashes it against the
+canonical version. The bracketed copyright line near the end of that file is
+part of the appendix — a template for the per-file header — not a blank to fill
+in. Editing it is how a repository stops being detected as Apache 2.0.

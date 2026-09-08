@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Production Resilience Intelligence — stateful agentic digital twin for film production"
 requires-python = ">=3.12"
 license = { file = "LICENSE" }
+authors = [{ name = "Prajwal Sutar" }]
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",

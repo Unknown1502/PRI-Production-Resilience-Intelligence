@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { PRODUCTION_ID, api, money } from "@/lib/api";
+import { api, money } from "@/lib/api";
 import { lastFrame } from "@/lib/stream";
 import type { Candidate, ImpactReport, Recovery } from "@/lib/types";
 
@@ -52,7 +52,7 @@ const EMPTY_IMPACT: ImpactReport = {
 };
 
 export default function RecoveryPage() {
-  const { frames, setMode, refreshVersion } = useShell();
+  const { productionId, frames, setMode, refreshVersion } = useShell();
   const [recovery, setRecovery] = useState<Recovery | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -71,7 +71,7 @@ export default function RecoveryPage() {
       setBusy(true);
       setNotice(null);
       try {
-        const result = await api.recover(PRODUCTION_ID, withEventId);
+        const result = await api.recover(productionId, withEventId);
         setRecovery(result);
         setMode(result.mode);
         setSelected(result.recommended_plan_id);
@@ -81,7 +81,7 @@ export default function RecoveryPage() {
         setBusy(false);
       }
     },
-    [setMode],
+    [productionId, setMode],
   );
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function RecoveryPage() {
     let live = true;
 
     api
-      .latestSession(PRODUCTION_ID)
+      .latestSession(productionId)
       .then(({ session }) => {
         if (!live || session === null || session.candidates.length === 0) return;
         setRecovery({
@@ -140,7 +140,7 @@ export default function RecoveryPage() {
     return () => {
       live = false;
     };
-  }, [recovery]);
+  }, [productionId, recovery]);
 
   const approve = useCallback(async () => {
     if (recovery === null || selected === null) return;

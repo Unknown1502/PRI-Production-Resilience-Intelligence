@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { PRODUCTION_ID, api } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { AuditEntry } from "@/lib/types";
 
 import { useShell } from "@/components/Shell";
@@ -66,20 +66,20 @@ function tone(action: string): "clear" | "alert" | "caution" | "neutral" {
 }
 
 export default function AuditPage() {
-  const { frames } = useShell();
+  const { productionId, frames } = useShell();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [filter, setFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     api
-      .audit(PRODUCTION_ID, 500)
+      .audit(productionId, 500)
       .then((rows) => {
         setEntries(rows);
         setError(null);
       })
       .catch((cause: Error) => setError(cause.message));
-  }, []);
+  }, [productionId]);
 
   useEffect(load, [load]);
   useEffect(() => {

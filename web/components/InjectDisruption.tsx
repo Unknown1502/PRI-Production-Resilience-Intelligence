@@ -26,7 +26,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { API_URL, PRODUCTION_ID } from "@/lib/api";
+import { API_URL } from "@/lib/api";
+
+import { useShell } from "@/components/Shell";
 
 const PASSCODE_KEY = "pri-inject-passcode";
 
@@ -47,7 +49,10 @@ type Injectable = {
   enabled: boolean;
 };
 
-export function InjectDisruption({ productionId = PRODUCTION_ID }: { productionId?: string }) {
+export function InjectDisruption({ productionId }: { productionId?: string } = {}) {
+  // As RunDisruption: a typed disruption goes to the production on screen.
+  const shell = useShell();
+  const target = productionId ?? shell.productionId;
   const [passcode, setPasscode] = useState("");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -69,11 +74,11 @@ export function InjectDisruption({ productionId = PRODUCTION_ID }: { productionI
   }, []);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/disruptions/injectable?production_id=${productionId}`)
+    fetch(`${API_URL}/api/disruptions/injectable?production_id=${target}`)
       .then((r) => (r.ok ? r.json() : null))
       .then(setWhat)
       .catch(() => setWhat(null));
-  }, [productionId]);
+  }, [target]);
 
   const reset = useCallback(async () => {
     setBusy(true);
@@ -115,7 +120,7 @@ export function InjectDisruption({ productionId = PRODUCTION_ID }: { productionI
       const response = await fetch(`${API_URL}/api/disruptions/inject`, {
         method: "POST",
         headers: { "content-type": "application/json", "X-Inject-Passcode": passcode },
-        body: JSON.stringify({ text, production_id: productionId }),
+        body: JSON.stringify({ text, production_id: target }),
       });
       if (response.status === 404) {
         setError("Live injection is switched off on this deployment.");
@@ -136,7 +141,7 @@ export function InjectDisruption({ productionId = PRODUCTION_ID }: { productionI
     } finally {
       setBusy(false);
     }
-  }, [passcode, productionId, text]);
+  }, [passcode, target, text]);
 
   if (what && !what.enabled) return null;
 

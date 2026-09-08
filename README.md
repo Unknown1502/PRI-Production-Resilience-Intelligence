@@ -282,10 +282,18 @@ Full traceability in
 
 ## Limitations, honestly
 
-- **One production, one unit.** The schema and the validator are per-production.
-  Second-unit scheduling and cross-production resource contention are not
-  modelled; C005 and C007 check for double-booking but nothing generates a
-  multi-unit plan.
+- **Many productions; one unit each.** PRI holds any number of productions at
+  once — the importer creates them, they are addressed independently, and the
+  console follows whichever one is selected across every screen. What is *not*
+  modelled is a second unit inside a production: C005 and C007 check for
+  double-booking, but nothing generates a multi-unit plan, and cross-production
+  resource contention is not represented at all.
+
+  Worth stating plainly because it was wrong until the day of submission. Every
+  screen except Overview read a hard-coded production id, so importing a film
+  and then opening Disruption showed the *seeded* film's data under the
+  imported film's name in the header. Nothing errored; it simply answered about
+  the wrong production. Found while rehearsing the demo, not by a test.
 - **The SSE broker is in-process, so the API runs as a single instance.** A
   client connected to one Cloud Run instance would not see a recovery driven on
   another. Two judges opening the URL at once is enough to trigger it, and

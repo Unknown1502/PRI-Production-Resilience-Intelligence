@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { PRODUCTION_ID, api, clock, shortDate } from "@/lib/api";
+import { api, clock, shortDate } from "@/lib/api";
 import type { Schedule, ScheduleDay, VerificationView } from "@/lib/types";
 
 import { useShell } from "@/components/Shell";
@@ -66,7 +66,7 @@ const PENDING_CHECKS = [
 ];
 
 export default function VerificationPage() {
-  const { frames, version } = useShell();
+  const { productionId, frames, version } = useShell();
   const [view, setView] = useState<VerificationView | null>(null);
   const [current, setCurrent] = useState<Schedule | null>(null);
   const [previous, setPrevious] = useState<Schedule | null>(null);
@@ -80,9 +80,9 @@ export default function VerificationPage() {
     }
     try {
       const [verification, now, before] = await Promise.all([
-        api.verification(PRODUCTION_ID, target),
-        api.schedule(PRODUCTION_ID, target),
-        api.schedule(PRODUCTION_ID, target - 1),
+        api.verification(productionId, target),
+        api.schedule(productionId, target),
+        api.schedule(productionId, target - 1),
       ]);
       setView(verification);
       setCurrent(now);
@@ -91,7 +91,7 @@ export default function VerificationPage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not load verification.");
     }
-  }, []);
+  }, [productionId]);
 
   useEffect(() => {
     if (version !== null) void load(version);

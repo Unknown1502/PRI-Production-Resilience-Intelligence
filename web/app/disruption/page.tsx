@@ -38,7 +38,7 @@ import {
 
 import "@xyflow/react/dist/style.css";
 
-import { PRODUCTION_ID, api } from "@/lib/api";
+import { api } from "@/lib/api";
 import { lastFrame } from "@/lib/stream";
 import type { GraphPayload, ImpactReport, NodeStatus, Schedule } from "@/lib/types";
 
@@ -80,7 +80,7 @@ const LEGEND: { status: NodeStatus; label: string }[] = [
 ];
 
 export default function DisruptionPage() {
-  const { frames } = useShell();
+  const { productionId, frames } = useShell();
   const [graph, setGraph] = useState<GraphPayload | null>(null);
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [impact, setImpact] = useState<ImpactReport | null>(null);
@@ -89,12 +89,15 @@ export default function DisruptionPage() {
   const eventFrame = lastFrame(frames, "EVENT_RECEIVED");
   const eventId = eventFrame ? String(eventFrame.event_id ?? "") : "";
 
-  const loadGraph = useCallback((withEvent: string) => {
-    api
-      .graph(PRODUCTION_ID, withEvent || undefined)
-      .then(setGraph)
-      .catch(() => setGraph(null));
-  }, []);
+  const loadGraph = useCallback(
+    (withEvent: string) => {
+      api
+        .graph(productionId, withEvent || undefined)
+        .then(setGraph)
+        .catch(() => setGraph(null));
+    },
+    [productionId],
+  );
 
   useEffect(() => {
     loadGraph(eventId);
@@ -105,10 +108,10 @@ export default function DisruptionPage() {
   // the one number on screen nothing computed.
   useEffect(() => {
     api
-      .schedule(PRODUCTION_ID)
+      .schedule(productionId)
       .then(setSchedule)
       .catch(() => setSchedule(null));
-  }, []);
+  }, [productionId]);
 
   useEffect(() => {
     if (impactFrame === null) return;

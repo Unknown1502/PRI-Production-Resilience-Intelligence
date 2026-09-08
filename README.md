@@ -135,6 +135,40 @@ verification fails, the transaction aborts and the version was never written.
 
 ---
 
+## Why this generalises
+
+Strip the film nouns out and PRI is a constrained-replanning engine with an
+approval gate. The shape it solves: a dependency graph of work already
+committed to, a disruption that invalidates part of it, hard constraints any
+recovery must satisfy, a cost model over the surviving alternatives, and a
+human decision recorded before anything is written. It is demonstrated on a
+film schedule because that is this hackathon's theme, not because the engine
+knows what a scene is.
+
+The same shape, three other places. **Manufacturing changeover:** a line stops,
+the scene is a production order, the constraint is tooling and shift rest, the
+call sheet is the shift plan the floor works to. **Clinical trial site
+scheduling:** a site goes offline, the scene is a patient visit, the constraint
+is protocol windows and monitor availability, and the artefact is the site
+visit schedule — with the same need to prove nobody was booked outside their
+window. **Field service dispatch:** an engineer calls in sick, the scene is a
+job, the constraint is skills, parts and travel time, and the artefact is
+tomorrow's route sheet.
+
+The film-specific part is small and named. The constraint pack in
+[`config/policies.yaml`](config/policies.yaml) and the ten rules that read it
+in [`engine/constraints/validator.py`](src/pri/engine/constraints/validator.py);
+the call-sheet renderer in
+[`artifacts/call_sheet.py`](src/pri/artifacts/call_sheet.py); and the
+workbook schema in [`importer/`](src/pri/importer/). Those would be rewritten
+for another domain. Everything above them — the append-only version chain, the
+blast-radius walk, the four strategy families, the Pareto frontier, the
+seven-step transition and the six verification checks — is domain-neutral and
+would not be touched. That is the boundary; it is three files and a rule pack,
+not a rewrite.
+
+---
+
 ## Why the numbers are trustworthy
 
 The architecture law: **deterministic software computes all numbers; Gemini

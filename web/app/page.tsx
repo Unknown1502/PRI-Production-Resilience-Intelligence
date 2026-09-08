@@ -16,6 +16,8 @@
  */
 
 import Link from "next/link";
+
+import { Orientation } from "@/components/Orientation";
 import { useCallback, useEffect, useState } from "react";
 
 import { api, clock, shortDate } from "@/lib/api";
@@ -108,6 +110,8 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-5 p-6">
+      <Orientation />
+
       {/* A production reads as a sentence, not as five boxed statistics. */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>

@@ -85,26 +85,57 @@ const OPTIONS: Array<{ value: Choice; label: string; icon: () => React.ReactElem
   { value: "system", label: "Match system", icon: SystemIcon },
 ];
 
+/**
+ * Storage access that cannot take the page down with it.
+ *
+ * These four calls were bare. In a browser with site data blocked, *reading*
+ * `window.localStorage` throws rather than returning null — and because this
+ * component is mounted in the header of every route, the exception unmounted
+ * the whole tree. The console rendered "Application error: a client-side
+ * exception has occurred" and nothing else: not a lost theme preference, the
+ * entire product. Found by the orientation band's own acceptance test, which
+ * asks that the board still render with storage throwing.
+ *
+ * Losing the preference is the correct degradation. The inline script in
+ * `app/layout.tsx` already guards its own read the same way, so the page still
+ * paints in the system theme.
+ */
+function readTheme(): string | null {
+  try {
+    return window.localStorage.getItem(THEME_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeTheme(next: Choice): void {
+  try {
+    if (next === "system") window.localStorage.removeItem(THEME_KEY);
+    else window.localStorage.setItem(THEME_KEY, next);
+  } catch {
+    // The choice applies to this page view and is simply not remembered.
+  }
+}
+
 export function ThemeToggle() {
   // Null until the client has read storage. The server cannot know the choice,
   // so rendering a guess produces a hydration mismatch and a visible flicker.
   const [choice, setChoice] = useState<Choice | null>(null);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(THEME_KEY);
+    const stored = readTheme();
     setChoice(stored === "light" || stored === "dark" ? stored : "system");
 
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const onSystemChange = () => {
-      if (window.localStorage.getItem(THEME_KEY) === null) apply("system");
+      if (readTheme() === null) apply("system");
     };
     media.addEventListener("change", onSystemChange);
     return () => media.removeEventListener("change", onSystemChange);
   }, []);
 
   const choose = useCallback((next: Choice) => {
-    if (next === "system") window.localStorage.removeItem(THEME_KEY);
-    else window.localStorage.setItem(THEME_KEY, next);
+    writeTheme(next);
     apply(next);
     setChoice(next);
   }, []);

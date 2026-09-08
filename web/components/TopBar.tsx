@@ -9,11 +9,13 @@
  * the verification page.
  */
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
 import type { ConnectionState } from "@/lib/stream";
 
+import { reopenOrientation } from "./Orientation";
 import { ThemeToggle } from "./ThemeToggle";
 import { StatusPill } from "./primitives";
 
@@ -61,7 +63,15 @@ export function TopBar({
     <header className="flex h-14 shrink-0 items-center gap-5 border-b border-board-600 bg-board-800 px-5">
       <div className="min-w-0">
         <h1 className="truncate text-sm font-semibold text-chalk-100">{title}</h1>
-        <p className="text-2xs text-chalk-600">Production Resilience Intelligence</p>
+        {/* Was "Production Resilience Intelligence", which expands the acronym
+            and tells a stranger nothing. This is the highest-visibility
+            sentence in the project, so it says what the system does — and
+            leads with the refusal, because that is the part nobody else is
+            demonstrating. Truncates rather than wraps: it must never push the
+            state chip around at 1280px. */}
+        <p className="truncate text-2xs text-chalk-600">
+          Computes what a disruption costs. Refuses plans that break the rules.
+        </p>
       </div>
 
       <div className="ml-2 flex items-baseline gap-2 rounded-md border border-board-500 bg-board-700 px-3 py-1.5">
@@ -88,6 +98,21 @@ export function TopBar({
           />
           {connection}
         </StatusPill>
+
+        {/* Brings the Overview band back. A presenter who dismissed it needs
+            it again before recording and should not have to clear site data.
+            Links home because the band only lives on Overview. */}
+        <Link
+          href="/"
+          onClick={reopenOrientation}
+          aria-label="Show the introduction"
+          title="What is this?"
+          className="rounded-sm border border-board-500 px-2 py-0.5 text-2xs text-chalk-600
+                     hover:text-chalk-200 focus-visible:outline focus-visible:outline-2
+                     focus-visible:outline-offset-2 focus-visible:outline-chalk-600"
+        >
+          ?
+        </Link>
 
         <ThemeToggle />
 

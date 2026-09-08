@@ -1,5 +1,15 @@
 # PRI — Production Resilience Intelligence
 
+> **A deterministic agentic digital twin: Gemini interprets, software decides,
+> and nothing reaches the schedule that has not passed seven gates and six
+> checks.**
+>
+> Demonstrated on a film production, where a blocked location on Tuesday costs
+> three scenes, a VFX delivery date and forty thousand dollars — and the
+> replan has to be defensible by 19:00.
+
+**Live console:** <https://pri-web-3r5eyp275a-uc.a.run.app>
+
 ## Inspiration
 
 A lost shooting day on a mid-budget feature costs forty to eighty thousand
@@ -119,6 +129,13 @@ Second-unit scheduling. A budget integration so `incremental_cost` reconciles
 against actuals. Weather forecasts instead of a saturation constant. And a
 learned prior over which family a producer actually accepts — the one place a
 model genuinely should be doing the work.
+
+And another domain, because the engine is not really about film. A dependency
+graph of committed work, a disruption, hard constraints, a cost model and an
+approval gate is the shape of a manufacturing changeover, a clinical trial site
+schedule or a field service dispatch board just as much as a shooting
+schedule — the film-specific part is a rule pack, a PDF renderer and an
+importer schema, and the README names all three by path.
 
 ## Built with
 

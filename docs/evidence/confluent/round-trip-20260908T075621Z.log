@@ -1,0 +1,31 @@
+Confluent live round-trip — captured 2026-09-08T07:56:21Z
+
+The point of this file is that nothing here calls /recover. A message is
+put on production.events by a script on a laptop; the pri-consumer service
+on Cloud Run reads it and drives the recovery itself.
+
+Published via the ingest route instead, the consumer correctly does
+nothing: that route already recorded the event in Postgres, so the
+consumer sees a duplicate and declines to run it twice. Idempotency
+working, and the wrong way to evidence a round-trip.
+
+== 1. reset to the baseline ==
+{"production_id":"film-001","version":1,"scenes":13,"days":9}
+
+== 2. publish straight to Confluent, from here ==
+%4|1788854189.979|GETPID|pri-development#producer-1| [thrd:main]: Failed to acquire idempotence PID from broker sasl_ssl://pkc-619z3.us-east1.gcp.confluent.cloud:9092/bootstrap: Local: Broker handle destroyed without termination: retrying
+%6|1788854192.455|GETSUBSCRIPTIONS|pri-development#producer-1| [thrd:main]: Telemetry client instance id changed from AAAAAAAAAAAAAAAAAAAAAA to ytR6SVHWQ8mgm1I8KA/XOA
+Publishing location.blocked to production.events
+  event_id    c6-1788854181
+  production  film-001
+  location    LOC-04
+  window      2026-09-10T00:00:00+05:30
+              2026-09-11T00:00:00+05:30
+  reason      Municipal permit withdrawn for a festival procession
+2026-09-08 13:26:34 [info     ] kafka_delivered                offset=47 partition=0 topic=production.events
+
+Delivered.
+
+== 3. pri-consumer read it and drove the recovery ==
+after ~20s:
+{"session":{"session_id":"rec-5ae23f8c9e40","production_id":"film-001","event_id":"c6-1788854181","base_version":1,"status":"OPEN","created_at":"2026-09-08T07:56:48.440979Z","updated_at":"2026-09-08T07:56:48.440979Z","candidates":[{"id":"plan-A","session_id":"rec-5ae23f8c9e40","label":"A","moves":[{"kind":"MoveSceneToDay","scene_id":"S17","target_date":"2026-09-16"},{"kind":"MoveSceneToDay","scene_id":"S18","target_date":"2026-09-16"},{"kind":"MoveSceneToDay","scene_id":"S21","target_date":"2026-09-16"}],"valid":true,"violations":[],"score":{"incremental_cost":"10950.000","operational_risk":0.375,"schedule_delay_days":11.3793,"affected_scene_count":3,"crew_disruption_hours":0.0,"downstream_dependency_impact":1},"pareto_optimal":true},{"id":"plan-B","session_id":"rec-5ae23f8c9e40","label":"B","moves":[{"kind":"SwapDays","date_a":"2026-09-10","date_b":"2026-09-11"}],"valid":false,"violations":[{"code":"C001","message":"Insufficient crew turnaround between 2026-09-10 and 2026-09-11: 9.0h rest is less than 10.0h minimum.","observed":"9.0h","required":">= 10.0h","severity":"HARD","subject_ids":["2026-09-10","2026-09-11"]}],"score":{"incremental_cost":"12520.00","operational_risk":0.2667,"schedule_delay_days":1.8966,"affected_scene_count":5,"crew_disruption_hours":14.0,"downstream_dependency_impact":1},"pareto_optimal":false},{"id":"plan-B2","session_id":"rec-5ae23f8c9e40","label":"B2","moves":[{"kind":"SwapDays","date_a":"2026-09-10","date_b":"2026-09-11"},{"date":"2026-09-11","kind":"ShiftCallTime","new_call_time":"2026-09-11T08:30:00+05:30"}],"valid":true,"violations":[],"score":{"incremental_cost":"12205.00","operational_risk":0.2667,"schedule_delay_days":1.8966,"affected_scene_count":5,"crew_disruption_hours":11.0,"downstream_dependency_impact":1},"pareto_optimal":true},{"id":"plan-C","session_id":"rec-5ae23f8c9e40","label":"C","moves":[{"kind":"RelocateScene","scene_id":"S17","target_location_id":"LOC-02"},{"kind":"RelocateScene","scene_id":"S18","target_location_id":"LOC-02"},{"kind":"RelocateScene","scene_id":"S21","target_location_id":"LOC-02"}],"valid":true,"violations":[],"score":{"incremental_cost":"14200.00","operational_risk":0.45,"schedule_delay_days":2.5,"affected_scene_count":3,"crew_disruption_hours":0.0,"downstream_dependency_impact":0},"pareto_optimal":false}]}}

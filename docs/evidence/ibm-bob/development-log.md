@@ -79,7 +79,11 @@ is the one failure discovered after wrap — and the reasoning lives in
 **Two modules were replaced rather than adapted.** An early
 `simulation/planner.py` and `verification/verifier.py` used different strategy
 names and verification codes than the specification settled on. Rewriting was
-cheaper than reconciling.
+cheaper than reconciling. Neither path exists in the repository — that is the
+point of the paragraph, and they are named here only so the replacement is on
+the record. What stands in their place is
+[`simulation/replan.py`](../../../src/pri/engine/simulation/replan.py) and
+[`verification/verify.py`](../../../src/pri/engine/verification/verify.py).
 
 ## Gates at the end of the build
 

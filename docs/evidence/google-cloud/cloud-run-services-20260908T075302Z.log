@@ -1,0 +1,27 @@
+Cloud Run services — captured 2026-09-08T07:53:02Z
+project: pri-production-resilience  region: us-central1
+
+NAME          READY  LATEST_READY_REVISION_NAME  URL
+pri-agent     True   pri-agent-00003-8qd         https://pri-agent-3r5eyp275a-uc.a.run.app
+pri-api       True   pri-api-00020-z8r           https://pri-api-3r5eyp275a-uc.a.run.app
+pri-consumer  True   pri-consumer-00012-mfs      https://pri-consumer-3r5eyp275a-uc.a.run.app
+pri-web       True   pri-web-00011-mdm           https://pri-web-3r5eyp275a-uc.a.run.app
+
+--- scaling, which the SSE broker depends on ---
+NAME          MIN  MAX
+pri-agent          20
+pri-api       1    1
+pri-consumer  1    1
+pri-web            4
+
+--- Cloud SQL ---
+NAME    DATABASE_VERSION  STATUS    REGION
+pri-db  POSTGRES_16       RUNNABLE  us-central1
+
+--- Secret Manager ---
+pri-a2a-token
+pri-api-key
+pri-confluent-api-key
+pri-confluent-api-secret
+pri-db-password
+pri-inject-passcode

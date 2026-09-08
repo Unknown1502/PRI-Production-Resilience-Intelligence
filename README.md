@@ -13,7 +13,8 @@ survivor, seven guards run in order, six verification checks confirm the write
 matched the promise, and the call sheet regenerates with the new call time. The
 whole loop takes about 1.3 seconds.
 
-> **Live demo:** _pending deployment_ · **Video:** _pending_
+> **Live console:** <https://pri-web-3r5eyp275a-uc.a.run.app> ·
+> **API health:** <https://pri-api-3r5eyp275a-uc.a.run.app/health>
 > Locally: `make bootstrap && make run-api` then `make demo` — full flow in
 > under two seconds, no cloud account needed.
 

@@ -1,0 +1,13 @@
+Confluent live round-trip — captured 2026-09-08T07:53:39Z
+A disruption published to production.events, consumed by pri-consumer,
+and driven through recovery by it. Nothing here calls /recover directly.
+
+== 1. reset to the baseline ==
+{"production_id":"film-001","version":1,"scenes":13,"days":9}
+
+== 2. publish onto production.events, via the injection endpoint ==
+{"event_id":"c6-roundtrip-1788854019","duplicate":false,"production_id":"film-001"}
+
+== 3. the broker's own acknowledgement (topic, partition, offset) ==
+{"status":"ok","version":"0.1.0","git_sha":"c9617ac","checks":{"database":"ok","kafka":"ok","gemini":"configured"},"database":"up","agent_enabled":true,"kafka":{"status":"ok","topics":["production.events","production.recovery.requested","production.recovery.completed","production.audit"],"reachable":true,"delivered":2,"failed":0,"degraded":false,"reopens_in_seconds":0.0,"last_error":null,"last_delivery":{"topic":"production.events","partition":0,"offset":46}},"at":"2026-09-08T07:53:51.676004Z"}
+== 4. the consumer read it and drove recovery ==

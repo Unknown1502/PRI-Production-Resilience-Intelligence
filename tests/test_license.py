@@ -81,9 +81,7 @@ class TestTheLicenceIsDetectable:
         notice inserted anywhere in the terms.
         """
         changed = [
-            (a, b)
-            for a, b in zip(_text().split("\n"), _body().split("\n"), strict=True)
-            if a != b
+            (a, b) for a, b in zip(_text().split("\n"), _body().split("\n"), strict=True) if a != b
         ]
         assert len(changed) <= 1, f"more than the appendix line differs: {changed[:3]}"
         if changed:
